@@ -8,7 +8,12 @@ MIDI Board is a netless app for Musician, MIDI maker and Music educator.
 
 1. 访问[声网Workshop](https://workshop.netless.link/)获取临时配置环境用于测试
 
-2. 复制根目录下的`.env.example`并重命名为`.env`后，分别填写文件中的`VITE_APPID`, `VITE_ROOM_UUID` 和 `VITE_ROOM_TOKEN`为刚刚获取的临时环境
+2. 将本仓库clone到本地
+    ```
+    git clone https://github.com/CorpDreams/midi-board.git
+    ```
+
+3. 复制根目录下的`.env.example`并重命名为`.env`后，分别填写文件中的`VITE_APPID`, `VITE_ROOM_UUID` 和 `VITE_ROOM_TOKEN`为刚刚获取的临时环境
 
     也可直接使用以下测试用环境（不保证最新可用）：
     ```
@@ -22,10 +27,9 @@ MIDI Board is a netless app for Musician, MIDI maker and Music educator.
     VITE_ROOM_TOKEN=NETLESSROOM_YWs9VWtNUk92M1JIN2I2Z284dCZleHBpcmVBdD0xNjYwMzg1NjQxNjk0Jm5vbmNlPWFlYmVkZmUwLTAzNWQtMTFlZC04OWQxLTNmZjQ1Mzc3YzYxNyZyb2xlPTEmc2lnPTY5OWI4ODQwYWI4MGJkNmRlOGJhNWJkYTdiZjExNzUwMDBiMTg1ZjdkNmVlZTY3Y2I1ZjRlZDZiNmYzZjAyMDAmdXVpZD1hZWExNmNkMDAzNWQxMWVkYjk2YzliNmU0YmFlYmRhMg
     ```
 
-3. 在根目录使用命令行运行以下命令
+4. 在根目录使用命令行运行以下命令
 
     ``` sh
-    git clone https://github.com/CorpDreams/midi-board.git
     cd midi-board
     npm install
     npm start
