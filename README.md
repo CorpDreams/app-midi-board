@@ -8,9 +8,10 @@ MIDI Board is a netless app for Musician, MIDI maker and Music educator.
 
 1. 访问[声网Workshop](https://workshop.netless.link/)获取临时配置环境用于测试
 
-2. 将本仓库clone到本地
+2. 将本仓库clone到本地并进入根目录
     ```
     git clone https://github.com/CorpDreams/midi-board.git
+    cd midi-board
     ```
 
 3. 复制根目录下的`.env.example`并重命名为`.env`后，分别填写文件中的`VITE_APPID`, `VITE_ROOM_UUID` 和 `VITE_ROOM_TOKEN`为刚刚获取的临时环境
@@ -30,7 +31,6 @@ MIDI Board is a netless app for Musician, MIDI maker and Music educator.
 4. 在根目录使用命令行运行以下命令
 
     ``` sh
-    cd midi-board
     npm install
     npm start
     ```
