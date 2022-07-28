@@ -1,8 +1,8 @@
-# MidiBoard
+# 🎹 MIDI Board
 
 ## 插件简介
 
-MidiBoard
+MIDI Board is a netless app for Musician, MIDI maker and Music educator.
 
 ## 快速体验
 
