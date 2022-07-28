@@ -61,16 +61,7 @@ export default {
       get: () => data.progress.value,
       set: (progress) => storage.setState({ progress }),
     });
-    /*
-    Object.defineProperty(midiEditor, "ticks_progress", {
-      set: (value) => {
-        progress.value = value;
-      },
-      get: () => {
-        return progress;
-      },
-    });
-    */
+    
     function readMidi(file: any) {
       return new Promise((resolve: (value: MidiJSON) => void, reject) => {
         const reader = new FileReader();

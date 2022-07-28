@@ -27,9 +27,11 @@ class MidiEditor {
     constructor(midi_json?: MidiJSON) {
         this.ticks_progress = 0
         this.synth = new WebAudioTinySynth({ quality: 1, useReverb: 0 });
+        this.synth.setLoop(1)
         this.duration_ticks = 0
         this.ppq = 1
         this.time_signature = [4, 4]
+        this.is_play = false
         if (midi_json) {
             let midi_obj = new Midi();
             midi_obj.fromJSON(midi_json);
@@ -102,7 +104,9 @@ class MidiEditor {
         let midi_obj = new Midi();
         midi_obj.fromJSON(midi_json);
         this.midi = midi_obj
-        this.synth.loadMIDI(midi_obj.toArray());
+        if(midi_obj.tracks[0].notes[0]){
+            this.synth.loadMIDI(midi_obj.toArray());
+        }
         this.init()
     }
 
@@ -113,14 +117,24 @@ class MidiEditor {
     }
 
     updateMidiJSON(midi_json: MidiJSON) {
+        let playing = false
+        if(this.is_play){
+            playing = true
+        }
         this.pause()
         let progress = this.synth.getPlayStatus().curTick
         this.midi_json = midi_json
+        console.log(midi_json)
         let midi_obj = new Midi();
         midi_obj.fromJSON(midi_json);
         this.midi = midi_obj
-        this.synth.loadMIDI(midi_obj.toArray());
+        if(midi_obj.tracks[0].notes[0]){
+            this.synth.loadMIDI(midi_obj.toArray());
+        }
         this.update(progress)
+        if(playing){
+            this.play()
+        }
     }
 
     updateMidiFile(midi: File) {
@@ -137,7 +151,7 @@ class MidiEditor {
         this.update(progress)
     }
 
-    midi2name(midi: number){
+    midiToName(midi: number){
         let key = midi - 12
         let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         return `${notes[key % 12]}${Math.floor(key/12)}`
@@ -162,6 +176,18 @@ class MidiEditor {
         this.update(progress)
     }
 
+    addTrack(name?: string){
+        let progress = this.synth.getPlayStatus().curTick
+        let track = this.midi.addTrack();
+        if(name){
+            track.name = name
+        }else{
+            track.name = `Track ${this.midi.tracks.length - 1}`;
+        }
+        this.midi_json = this.midi.toJSON()
+        this.update(progress)
+    }
+
     play() {
         if (!this.midi) return console.error('Please loadMidiJSON first!')
         this.is_play = true
@@ -172,14 +198,29 @@ class MidiEditor {
     pauseWhen(tick){
         if (!this.midi) return console.error('Please loadMidiJSON first!')
         if(this.is_play){
+            this.playTimerCount = 0
+            /*this.playTimer = setTimeout(()=>{
+                while (this.synth.playTick < tick) {
+                    this.playTimerCount++
+                }
+                this.pause()
+                this.locateTick(tick)
+                clearTimeout(this.playTimer)
+            }, 0)
+            */
             this.playTimer = setInterval(()=>{
                 console.log(this.synth.playTick, tick)
-                if(this.synth.playTick >= tick){
-                    clearInterval(this.playTimer)
+                this.playTimerCount++
+                if(this.playTimerCount > 100){
+                    this.playTimer = null
+                }
+                if(this.synth.playTick >= tick || this.playTimerCount > 100){
                     this.pause()
                     this.locateTick(tick)
+                    clearInterval(this.playTimer)
                 }
             }, 100)
+            
         }
     }
 
