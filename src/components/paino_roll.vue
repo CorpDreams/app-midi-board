@@ -1,6 +1,6 @@
 <template>
   <div
-    class="paino-roll-wrap"
+    class="piano-roll-wrap"
     :style="cssVars"
     :class="{ pen: tool_id == 1, eraser: tool_id == 2 }"
   >
@@ -118,7 +118,7 @@
         </div>
         <!--<button @click="reset">reset</button>-->
       </div>
-      <div class="paino-scroll-bar-wrap">
+      <div class="piano-scroll-bar-wrap">
         <div
           class="btn-left"
           @click="toRollRange(scroll_left_tick - 500)"
@@ -151,7 +151,7 @@
         :style="{
           width: `${beat_width * getBeatArr.length}px`,
           height: `${key_height}px`,
-          left: `${paino_width - paino_wraps_scroll_left + 0.5}px`,
+          left: `${piano_width - piano_wraps_scroll_left + 0.5}px`,
         }"
       >
         <tr
@@ -177,16 +177,16 @@
     </div>
     <div class="content-wrap" ref="content-wrap">
       <div class="content-scroll-wrap">
-        <div class="side-paino-key">
+        <div class="side-piano-key">
           <div
             class="octave-wrap"
-            v-for="(octave, octave_index) in paino_key.octave"
+            v-for="(octave, octave_index) in piano_key.octave"
             :key="octave"
           >
             <div
               class="key"
-              :class="keyClass(paino_key, note_index)"
-              v-for="(code, note_index) in paino_key.code"
+              :class="keyClass(piano_key, note_index)"
+              v-for="(code, note_index) in piano_key.code"
               :key="code"
               :id="`key-${131 - (code + octave_index * 12)}`"
               @mousedown="keyDown(131 - (code + octave_index * 12))"
@@ -194,29 +194,29 @@
               @mouseup="keyUp(131 - (code + octave_index * 12))"
               @mouseout="keyUp(131 - (code + octave_index * 12))"
             >
-              {{ keyLabel(octave, paino_key, note_index) }}
+              {{ keyLabel(octave, piano_key, note_index) }}
             </div>
           </div>
         </div>
-        <div class="paino-wrap" ref="paino-wrap" @mousedown="addNote">
-          <div class="paino-roll">
+        <div class="piano-wrap" ref="piano-wrap" @mousedown="addNote">
+          <div class="piano-roll">
             <!--钢琴卷帘-->
             <table
               class="roll-wrap"
               :style="{ width: `${beat_width * getBeatArr.length}px` }"
-              ref="paino-roll-wrap"
+              ref="piano-roll-wrap"
             >
               <!--八度循环渲染-->
               <template
-                v-for="(octave, octave_index) in paino_key.octave"
+                v-for="(octave, octave_index) in piano_key.octave"
                 :key="octave"
               >
                 <!--八度内音高（行）循环渲染-->
                 <tr
                   class="pitch"
-                  :class="keyClass(paino_key, note_index)"
+                  :class="keyClass(piano_key, note_index)"
                   :id="`row-${octave_index}-${note_index}`"
-                  v-for="(code, note_index) in paino_key.code"
+                  v-for="(code, note_index) in piano_key.code"
                   :key="code"
                 >
                   <td class="pitch-line"></td>
@@ -228,6 +228,7 @@
                 class="notes-wrap"
                 v-if="tracks[track_num]"
                 :class="{ active: track_num == track_index }"
+                :style="{ width: `${beat_width * getBeatArr.length}px` }"
               >
                 <div
                   class="note"
@@ -283,7 +284,7 @@ import { inject, ref, toRef, watch, computed } from "vue";
 import Icon from "./Icon.vue";
 
 export default {
-  name: "paino-roll",
+  name: "piano-roll",
   components: {
     Icon,
   },
@@ -385,7 +386,7 @@ export default {
     };
   },
   data() {
-    const paino_key = {
+    const piano_key = {
       octave: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
       notes: ["B", "A#", "A", "G#", "G", "F#", "F", "E", "D#", "D", "C#", "C"],
       key_type: [1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 1],
@@ -403,18 +404,18 @@ export default {
 
     const key_height = 20;
     const beat_width = 60;
-    const paino_width = 80;
+    const piano_width = 80;
 
     const InputFileDOM: any = null;
     const ScrollBarDOM: any = null;
     const ThumbDOM: any = null;
     const TimeLineWrapDOM: any = null;
     const ContentWrapDOM: any = null;
-    const PainoWrapDOM: any = null;
-    const PainoRollDOM: any = null;
-    const PainoRollWrapDOM: any = null;
+    const PianoWrapDOM: any = null;
+    const PianoRollDOM: any = null;
+    const PianoRollWrapDOM: any = null;
 
-    const paino_wraps_scroll_left: any = 0;
+    const piano_wraps_scroll_left: any = 0;
 
     const scroll_left_tick: number = 0;
     const scroll_view_ticks: number = 0;
@@ -425,12 +426,12 @@ export default {
     const fucus_notes: any[] = [];
 
     return {
-      paino_key,
+      piano_key,
       tool_id,
       can_play,
       key_height,
       beat_width,
-      paino_width,
+      piano_width,
       cut_num,
       cut_arr,
       align_num,
@@ -441,10 +442,10 @@ export default {
       ThumbDOM,
       TimeLineWrapDOM,
       ContentWrapDOM,
-      PainoRollDOM,
-      PainoWrapDOM,
-      PainoRollWrapDOM,
-      paino_wraps_scroll_left,
+      PianoRollDOM,
+      PianoWrapDOM,
+      PianoRollWrapDOM,
+      piano_wraps_scroll_left,
       scroll_left_tick,
       scroll_view_ticks,
       tick_width,
@@ -453,12 +454,6 @@ export default {
     };
   },
   methods: {
-    test() {
-      console.log(
-        this.PainoRollWrapDOM.offsetWidth,
-        this.PainoWrapDOM.scrollLeft
-      );
-    },
     switchTool(tool_id: number) {
       if (this.tool_id !== tool_id) {
         return (this.tool_id = tool_id);
@@ -660,8 +655,8 @@ export default {
       let wheel_tick =
         (e.layerX / this.TimeLineWrapDOM.offsetWidth) * this.duration_ticks;
       let wheel_x =
-        (e.clientX - this.PainoWrapDOM.offsetLeft) /
-        this.PainoWrapDOM.offsetWidth;
+        (e.clientX - this.PianoWrapDOM.offsetLeft) /
+        this.PianoWrapDOM.offsetWidth;
 
       let delta_ticks = -((e.deltaY / Math.abs(e.deltaY)) * this.ppq * 2);
       let view_ticks_before = this.scroll_view_ticks;
@@ -680,7 +675,7 @@ export default {
       //TODO: 缩放聚焦于单一tick
       /*
       this.beat_width =
-        this.PainoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
+        this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
 
       let left_tick = this.scroll_left_tick - (this.scroll_view_ticks - view_ticks_before) * wheel_x
       console.log(this.beat_width)
@@ -695,7 +690,7 @@ export default {
       }
       this.scroll_left_tick = left_tick
       this.updateTickWidth()
-      this.updatePainoWrapScroll()
+      this.updatePianoWrapScroll()
       */
     },
     locateTick(e: any) {
@@ -732,7 +727,7 @@ export default {
           this.scroll_left_tick =
             start_left_tick + x_move / this.tick_width_bar;
         }
-        this.updatePainoWrapScroll();
+        this.updatePianoWrapScroll();
       };
       document.onmouseup = function () {
         document.onmousemove = document.onmousemove = null;
@@ -755,13 +750,13 @@ export default {
         // 正常移动
         this.scroll_left_tick = left_tick;
       }
-      this.updatePainoWrapScroll();
+      this.updatePianoWrapScroll();
     },
-    updatePainoWrapScroll() {
+    updatePianoWrapScroll() {
       // 滑条滚动同步
-      this.PainoWrapDOM.scrollLeft =
-        this.PainoRollWrapDOM.offsetWidth -
-        this.PainoWrapDOM.offsetWidth -
+      this.PianoWrapDOM.scrollLeft =
+        this.PianoRollWrapDOM.offsetWidth -
+        this.PianoWrapDOM.offsetWidth -
         (this.duration_ticks +
           this.more_beat * this.ppq -
           (this.scroll_left_tick + this.scroll_view_ticks)) *
@@ -775,11 +770,11 @@ export default {
       let left = this.tick_width * ticks;
 
       let key = name.substring(0, name.length - 1);
-      let key_index = this.paino_key.notes.indexOf(key);
+      let key_index = this.piano_key.notes.indexOf(key);
       let octave = parseInt(name.charAt(name.length - 1));
       let top =
         this.key_height * 12 * (10 - octave) + key_index * this.key_height;
-
+      console.warn(octave, key_index)
       let width = note_duration_ticks * this.tick_width;
       let padding = 2;
       if (this.beat_width < 20) {
@@ -792,8 +787,8 @@ export default {
       return [top, left, width, padding, font_size];
     },
     fileChange: async function (e: any) {
-      if(!e.target.files[0]){
-        return
+      if (!e.target.files[0]) {
+        return;
       }
       let file = e.target.files[0];
       this.midi_name = file.name;
@@ -802,7 +797,7 @@ export default {
       this.track_index = 0;
       this.loadMidi(this.midi_json);
       this.ticks_progress = 0;
-      this.PainoWrapDOM.scrollLeft = 0;
+      this.PianoWrapDOM.scrollLeft = 0;
       if (this.midi_json.tracks[0].notes[0]) {
         this.ContentWrapDOM.scrollTop =
           this.key_height *
@@ -882,15 +877,15 @@ export default {
       this.midiEditor.reset();
       this.context.dispatchMagixEvent("midi-reset", null);
     },
-    keyClass(paino_key: any, note_index: number) {
+    keyClass(piano_key: any, note_index: number) {
       let class_arr = [];
-      if (paino_key.key_type[note_index] == 2) {
+      if (piano_key.key_type[note_index] == 2) {
         class_arr.push("white-high");
       }
-      if (paino_key.key_type[note_index] >= 1) {
+      if (piano_key.key_type[note_index] >= 1) {
         class_arr.push("white");
       }
-      if (paino_key.key_type[note_index] == 0) {
+      if (piano_key.key_type[note_index] == 0) {
         class_arr.push("black");
       }
       class_arr.push(`key-${note_index}`);
@@ -905,12 +900,12 @@ export default {
       }
       return class_arr.join(" ");
     },
-    keyLabel(octave: number, paino_key: any, note_index: number) {
+    keyLabel(octave: number, piano_key: any, note_index: number) {
       // 仅显示各八度C的标签
-      if (paino_key.code[note_index] !== 11) {
+      if (piano_key.code[note_index] !== 11) {
         return "";
       }
-      return `${paino_key.notes[note_index]}${octave}`;
+      return `${piano_key.notes[note_index]}${octave}`;
     },
     initScrollBar() {
       // 初始化钢琴卷帘滑条，beat_width标准化并显示为初始缩放比例
@@ -919,11 +914,11 @@ export default {
         (this.duration_ticks + this.more_beat * this.ppq);
       this.scroll_left_tick = 0;
       this.beat_width = 60;
-      let piano_roll_width = this.ScrollBarDOM.clientWidth - this.paino_width;
+      let piano_roll_width = this.ScrollBarDOM.clientWidth - this.piano_width;
       let tick_num = (piano_roll_width / this.beat_width) * this.ppq;
       this.scroll_view_ticks = tick_num;
       this.updateTickWidth();
-      this.PainoWrapDOM.scrollLeft = 0;
+      this.PianoWrapDOM.scrollLeft = 0;
     },
     updateScrollBar() {
       // 处理宽度拖动事件：以滑条宽度更新beat_width并固定卷帘中起始tick
@@ -941,18 +936,17 @@ export default {
         this.scroll_view_ticks = width / this.tick_width_bar;
       }
       this.beat_width =
-        this.PainoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
+        this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
       this.updateTickWidth();
-      this.PainoWrapDOM.scrollLeft =
-        this.PainoWrapDOM.scrollLeft * (this.beat_width / beat_width_before);
+      this.reinitScrollBar()
     },
     reinitScrollBar() {
-      // 初始化钢琴卷帘滑条，beat_width标准化并显示为初始缩放比例
+      // 重新初始化钢琴卷帘滑条
       this.tick_width_bar =
         this.ScrollBarDOM.clientWidth /
         (this.duration_ticks + this.more_beat * this.ppq);
       this.updateTickWidth();
-      this.updatePainoWrapScroll();
+      this.updatePianoWrapScroll();
     },
     updateTickWidth() {
       //更新钢琴卷帘中Tick宽度
@@ -960,21 +954,31 @@ export default {
     },
     newMidi() {
       // 新建MIDI文件
-      this.pause();
-      let midi = new Midi();
-      let track = midi.addTrack();
-      midi.header.name = "Untitled";
-      midi.header.setTempo(140);
-      midi.header.timeSignatures.push({
-        ticks: 0,
-        timeSignature: [4, 4],
-        measures: 0,
-      });
-      midi.header.update();
-      track.name = "Track 0";
-      this.loadMidi(midi.toJSON());
-      this.midi_json = this.midiEditor.midi_json;
-      this.midi_name = "未命名.mid";
+      let confirmed = false;
+      if (this.midi_json) {
+        if (this.midi_json.tracks[0].notes.length > 0) {
+          confirmed = confirm("即将新建MIDI文件，请确认当前工程已保存！");
+        }
+      } else {
+        confirmed = true;
+      }
+      if (confirmed) {
+        this.pause();
+        let midi = new Midi();
+        let track = midi.addTrack();
+        midi.header.name = "Untitled";
+        midi.header.setTempo(140);
+        midi.header.timeSignatures.push({
+          ticks: 0,
+          timeSignature: [4, 4],
+          measures: 0,
+        });
+        midi.header.update();
+        track.name = "Track 0";
+        this.loadMidi(midi.toJSON());
+        this.midi_json = this.midiEditor.midi_json;
+        this.midi_name = "未命名.mid";
+      }
     },
     addTrack() {
       this.pause();
@@ -1034,16 +1038,18 @@ export default {
       for (let i = 0; i < this.track_index + 1; i++) {
         this.tracks.push({ name: "" });
       }
-      console.log(this.tracks, this.track_index);
       return this.tracks;
     },
+    getDurationTicks(){
+      return Math.ceil(this.duration_ticks / this.ppq)*this.ppq
+    }
   },
   computed: {
     cssVars() {
       return {
         "--key_height": `${this.key_height}px`,
         "--beat_width": `${this.beat_width}px`,
-        "--paino_width": `${this.paino_width}px`,
+        "--piano_width": `${this.piano_width}px`,
         "--cut_num": this.cut_num,
         "--beat_per_bar": this.midiEditor.time_signature[0],
       };
@@ -1076,10 +1082,10 @@ export default {
     this.ScrollBarDOM = this.$refs["scroll-bar"];
     this.ThumbDOM = this.$refs["thumb"];
     this.TimeLineWrapDOM = this.$refs["time-line-wrap"];
-    this.PainoWrapDOM = this.$refs["paino-wrap"];
+    this.PianoWrapDOM = this.$refs["piano-wrap"];
     this.ContentWrapDOM = this.$refs["content-wrap"];
-    this.PainoRollWrapDOM = this.$refs["paino-roll-wrap"];
-    this.paino_wraps_scroll_left = toRef(this.PainoWrapDOM, "scrollLeft");
+    this.PianoRollWrapDOM = this.$refs["piano-roll-wrap"];
+    this.piano_wraps_scroll_left = toRef(this.PianoWrapDOM, "scrollLeft");
     new ResizeObserver((e) => {
       this.updateScrollBar();
     }).observe(this.ThumbDOM);
@@ -1087,7 +1093,6 @@ export default {
       this.initScrollBar();
     }).observe(this.ScrollBarDOM);
     this.storage.addStateChangedListener((e: any) => {
-      //this.data.midi_name.value = this.storage.state.midi_name;
       if (e.ticks_progress) {
         this.data.ticks_progress.value = this.storage.state.ticks_progress;
         this.midiEditor.locateTick(this.storage.state.ticks_progress);
@@ -1099,6 +1104,7 @@ export default {
           this.updateMidi(this.midi_json);
         } else {
           this.loadMidi(this.midi_json);
+          this.updatePianoWrapScroll()
           this.can_play = false;
           this.pause();
         }
@@ -1133,6 +1139,10 @@ export default {
       this.midiEditor.locateTick(target_tick);
       this.storage.setState({ ticks_progress: target_tick });
     });
+    // 未新建文件时提示
+    if (this.data.midi_name.value == "") {
+      this.storage.setState({ midi_name: "请打开或新建MIDI文件" });
+    }
     // 加入房间自动加载
     if (this.storage.state.midi_json) {
       if (this.storage.state.midi_json.tracks[0].notes.length > 0) {
@@ -1159,7 +1169,6 @@ export default {
       if (e.target.nodeName == "TEXTAREA" || e.target.nodeName == "INPUT") {
         return;
       }
-      console.log(e.keyCode);
       // 切换笔
       if (e.keyCode == 80) {
         this.switchTool(1);
@@ -1247,7 +1256,7 @@ button {
   padding: 0;
 }
 
-.paino-roll-wrap {
+.piano-roll-wrap {
   display: flex;
   position: absolute;
   top: 0;
@@ -1266,7 +1275,7 @@ button {
     width: 100%;
     background-color: #2e2f3a;
 
-    .paino-scroll-bar-wrap {
+    .piano-scroll-bar-wrap {
       display: inline-flex;
       width: 100%;
       height: 25px;
@@ -1543,12 +1552,12 @@ button {
       display: flex;
       height: fit-content;
 
-      .side-paino-key {
+      .side-piano-key {
         flex-shrink: 0;
         width: 80px;
       }
 
-      .paino-wrap {
+      .piano-wrap {
         flex-grow: 1;
         overflow-x: hidden;
       }
@@ -1578,7 +1587,7 @@ button {
   }
 }
 
-.paino-roll {
+.piano-roll {
   position: relative;
 
   .notes-wrap {
