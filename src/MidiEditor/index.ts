@@ -44,14 +44,12 @@ class MidiEditor {
         if (!this.midi) {
             return
         }
-        console.log(this.midi)
-        console.log(new Midi(this.midi.toArray()))
         this.ticks_progress = 0
-        this.duration_ticks = this.midi.durationTicks
         this.name = this.midi.name
         this.time_signatures = this.midi.header.timeSignatures
         this.time_signature = this.time_signatures[0].timeSignature
         this.ppq = this.midi_json.header.ppq
+        this.duration_ticks = Math.ceil(this.midi.durationTicks / this.ppq) * this.ppq
         // TODO: 未知bug: Midi类赋值到this.midi，ppq会出现错误
         // this.synth.loadMIDI(this.midi.toArray());
         this.ticks_num = this.synth.getPlayStatus().maxTick
@@ -59,8 +57,6 @@ class MidiEditor {
             set: (value) => {
                 this.synth._playTick = value
                 this.ticks_progress = value
-                // console.log(this.ticks_progress)
-                //console.log(this.synth.song.ev[this.synth.playIndex])
             },
             get: () => {
                 return this.synth._playTick
@@ -81,13 +77,10 @@ class MidiEditor {
     }
 
     update(progress: number) {
-        //let progress = this.ticks_progress
-        // this.midi_json = this.midi.toJSON()
-        console.log('progress', progress)
-        this.duration_ticks = this.midi.durationTicks
         this.name = this.midi.name
         this.time_signatures = this.midi.header.timeSignatures
         this.ppq = this.midi.header.ppq
+        this.duration_ticks = Math.ceil(this.midi.durationTicks / this.ppq) * this.ppq
         this.synth.loadMIDI(this.midi.toArray());
         this.ticks_num = this.synth.getPlayStatus().maxTick
         if(this.ticks_num < progress){
@@ -99,7 +92,6 @@ class MidiEditor {
     }
 
     loadMidiJSON(midi_json: MidiJSON) {
-        console.log(midi_json)
         this.midi_json = midi_json
         let midi_obj = new Midi();
         midi_obj.fromJSON(midi_json);
@@ -124,7 +116,6 @@ class MidiEditor {
         this.pause()
         let progress = this.synth.getPlayStatus().curTick
         this.midi_json = midi_json
-        console.log(midi_json)
         let midi_obj = new Midi();
         midi_obj.fromJSON(midi_json);
         this.midi = midi_obj
@@ -197,7 +188,7 @@ class MidiEditor {
 
     pauseWhen(tick){
         if (!this.midi) return console.error('Please loadMidiJSON first!')
-        if(this.is_play){
+        if(this.is_play && !this.playTimer){
             this.playTimerCount = 0
             /*this.playTimer = setTimeout(()=>{
                 while (this.synth.playTick < tick) {
@@ -209,15 +200,20 @@ class MidiEditor {
             }, 0)
             */
             this.playTimer = setInterval(()=>{
-                console.log(this.synth.playTick, tick)
                 this.playTimerCount++
-                if(this.playTimerCount > 100){
-                    this.playTimer = null
-                }
-                if(this.synth.playTick >= tick || this.playTimerCount > 100){
+                if(this.playTimerCount > 20){
                     this.pause()
                     this.locateTick(tick)
                     clearInterval(this.playTimer)
+                    this.playTimer = null
+                    return
+                }
+                if(this.synth.playTick >= tick){
+                    this.pause()
+                    this.locateTick(tick)
+                    clearInterval(this.playTimer)
+                    this.playTimer = null
+                    return
                 }
             }, 100)
             
