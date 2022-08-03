@@ -1,7 +1,7 @@
 {
-  "name": "app-counter",
+  "name": "app-midi-board",
   "version": "0.1.0",
-  "description": "Template for a Netless Community App",
+  "description": "MIDI Board - A Netless app for Musician, MIDI maker and Music educator",
   "private": true,
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
