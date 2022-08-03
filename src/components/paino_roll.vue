@@ -964,6 +964,7 @@ export default {
       }
       if (confirmed) {
         this.pause();
+        this.InputFileDOM.value = null
         let midi = new Midi();
         let track = midi.addTrack();
         midi.header.name = "Untitled";
