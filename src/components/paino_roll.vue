@@ -774,7 +774,7 @@ export default {
       let octave = parseInt(name.charAt(name.length - 1));
       let top =
         this.key_height * 12 * (10 - octave) + key_index * this.key_height;
-      console.warn(octave, key_index)
+      // console.warn(octave, key_index)
       let width = note_duration_ticks * this.tick_width;
       let padding = 2;
       if (this.beat_width < 20) {
