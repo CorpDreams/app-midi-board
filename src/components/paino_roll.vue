@@ -122,7 +122,9 @@
         <div
           class="btn-left"
           @click="toRollRange(scroll_left_tick - 500)"
-        ></div>
+        >
+          <Icon name="left" height="18" width="18" />
+        </div>
         <div class="scroll-bar" ref="scroll-bar">
           <div
             class="thumb"
@@ -142,7 +144,9 @@
         <div
           class="btn-right"
           @click="toRollRange(scroll_left_tick + 500)"
-        ></div>
+        >
+          <Icon name="right" height="18" width="18" />
+        </div>
       </div>
       <table
         class="time-line-wrap"
@@ -1286,9 +1290,27 @@ button {
       .btn-right {
         flex-shrink: 0;
         flex-grow: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         width: 25px;
         height: 25px;
         background-color: #888;
+        transition: all .1s;
+        cursor: pointer;
+
+        &:deep(svg){
+          fill: #444;
+          transition: all .1s;
+        }
+
+        &:hover{
+          background-color: #777;
+
+          &:deep(svg){
+            fill: #b6c3c9;
+          }
+        }
       }
 
       .scroll-bar {
