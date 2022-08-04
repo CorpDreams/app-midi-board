@@ -803,7 +803,7 @@ export default {
       if (this.midi_json.tracks[0].notes[0]) {
         this.ContentWrapDOM.scrollTop =
           this.key_height *
-          (125 - (this.midi_json.tracks[0].notes[0].midi - 12));
+          (120 - (this.midi_json.tracks[0].notes[0].midi - 12));
       }
     },
     readMidi(file: any) {
