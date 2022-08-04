@@ -585,7 +585,7 @@ export default {
     },
     addNote(e: any) {
       if (!this.midi_json) {
-        alert("error");
+        alert("请先打开或新建MIDI文件");
         return;
       }
       if (this.tool_id == 1 && e.target.classList.contains("notes-wrap")) {
