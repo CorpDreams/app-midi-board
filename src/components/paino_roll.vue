@@ -773,9 +773,10 @@ export default {
       let note_duration_ticks = note.durationTicks;
       let left = this.tick_width * ticks;
 
-      let key = name.substring(0, name.length - 1);
+      let octave_str = name.match(/\d+/g)[0]
+      let octave = parseInt(octave_str);
+      let key = name.substring(0, name.length - octave_str.length);
       let key_index = this.piano_key.notes.indexOf(key);
-      let octave = parseInt(name.charAt(name.length - 1));
       let top =
         this.key_height * 12 * (10 - octave) + key_index * this.key_height;
       // console.warn(octave, key_index)
@@ -1110,6 +1111,7 @@ export default {
         } else {
           this.loadMidi(this.midi_json);
           this.updatePianoWrapScroll()
+          this.updateScrollBar()
           this.can_play = false;
           this.pause();
         }
