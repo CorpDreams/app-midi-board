@@ -52,6 +52,7 @@
           class="btn-add-track btn-action"
           @click="addTrack"
           title="新建轨道"
+          :class="{ unavailable: hasMidiJson }"
         >
           <Icon name="add-track" height="20" width="20" />
         </button>
@@ -119,10 +120,7 @@
         <!--<button @click="reset">reset</button>-->
       </div>
       <div class="piano-scroll-bar-wrap">
-        <div
-          class="btn-left"
-          @click="toRollRange(scroll_left_tick - 500)"
-        >
+        <div class="btn-left" @click="toRollRange(scroll_left_tick - 500)">
           <Icon name="left" height="18" width="18" />
         </div>
         <div class="scroll-bar" ref="scroll-bar">
@@ -141,10 +139,7 @@
             <div class="drag-area" @mousedown="moveRollRange"></div>
           </div>
         </div>
-        <div
-          class="btn-right"
-          @click="toRollRange(scroll_left_tick + 500)"
-        >
+        <div class="btn-right" @click="toRollRange(scroll_left_tick + 500)">
           <Icon name="right" height="18" width="18" />
         </div>
       </div>
@@ -589,11 +584,13 @@ export default {
       }
     },
     addNote(e: any) {
+      if (!this.midi_json) {
+        alert("error");
+        return;
+      }
       if (this.tool_id == 1 && e.target.classList.contains("notes-wrap")) {
-        let is_play = false;
         if (this.midiEditor.is_play) {
           this.pause();
-          is_play = true;
         }
         let code_add = Math.ceil(131 - e.layerY / this.key_height);
         let midi_add = code_add + 12;
@@ -773,7 +770,7 @@ export default {
       let note_duration_ticks = note.durationTicks;
       let left = this.tick_width * ticks;
 
-      let octave_str = name.match(/\d+/g)[0]
+      let octave_str = name.match(/\d+/g)[0];
       let octave = parseInt(octave_str);
       let key = name.substring(0, name.length - octave_str.length);
       let key_index = this.piano_key.notes.indexOf(key);
@@ -943,7 +940,7 @@ export default {
       this.beat_width =
         this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
       this.updateTickWidth();
-      this.reinitScrollBar()
+      this.reinitScrollBar();
     },
     reinitScrollBar() {
       // 重新初始化钢琴卷帘滑条
@@ -967,24 +964,25 @@ export default {
       } else {
         confirmed = true;
       }
-      if (confirmed) {
-        this.pause();
-        this.InputFileDOM.value = null
-        let midi = new Midi();
-        let track = midi.addTrack();
-        midi.header.name = "Untitled";
-        midi.header.setTempo(140);
-        midi.header.timeSignatures.push({
-          ticks: 0,
-          timeSignature: [4, 4],
-          measures: 0,
-        });
-        midi.header.update();
-        track.name = "Track 0";
-        this.loadMidi(midi.toJSON());
-        this.midi_json = this.midiEditor.midi_json;
-        this.midi_name = "未命名.mid";
+      if (!confirmed) {
+        return;
       }
+      this.pause();
+      this.InputFileDOM.value = null;
+      let midi = new Midi();
+      let track = midi.addTrack();
+      midi.header.name = "Untitled";
+      midi.header.setTempo(140);
+      midi.header.timeSignatures.push({
+        ticks: 0,
+        timeSignature: [4, 4],
+        measures: 0,
+      });
+      midi.header.update();
+      track.name = "Track 0";
+      this.loadMidi(midi.toJSON());
+      this.midi_json = this.midiEditor.midi_json;
+      this.midi_name = "未命名.mid";
     },
     addTrack() {
       this.pause();
@@ -996,6 +994,10 @@ export default {
       this.track_index = track_index;
     },
     removeTrack(track_index: number) {
+      let confirmed = confirm(`是否确认删除序号为 ${track_index} 的轨道？`);
+      if (!confirmed) {
+        return;
+      }
       this.pause();
       this.midiEditor.midi_json.tracks.splice(track_index, 1);
       this.midi_json = JSON.parse(JSON.stringify(this.midiEditor.midi_json));
@@ -1046,9 +1048,9 @@ export default {
       }
       return this.tracks;
     },
-    getDurationTicks(){
-      return Math.ceil(this.duration_ticks / this.ppq)*this.ppq
-    }
+    getDurationTicks() {
+      return Math.ceil(this.duration_ticks / this.ppq) * this.ppq;
+    },
   },
   computed: {
     cssVars() {
@@ -1082,6 +1084,12 @@ export default {
       }
       return "play";
     },
+    hasMidiJson() {
+      if(this.midi_json){
+        return false
+      }
+      return true
+    }
   },
   mounted() {
     this.InputFileDOM = this.$refs["input-file"];
@@ -1110,8 +1118,10 @@ export default {
           this.updateMidi(this.midi_json);
         } else {
           this.loadMidi(this.midi_json);
-          this.updatePianoWrapScroll()
-          this.updateScrollBar()
+          this.updatePianoWrapScroll();
+          this.updateScrollBar();
+          this.ContentWrapDOM.scrollTop =
+            this.key_height * 60;
           this.can_play = false;
           this.pause();
         }
@@ -1156,6 +1166,8 @@ export default {
         this.can_play = true;
       }
       this.loadMidi(this.midi_json);
+      this.updatePianoWrapScroll();
+      this.updateScrollBar();
       this.ContentWrapDOM.scrollTop = this.content_scroll_top;
       this.midiEditor.locateTick(this.storage.state.ticks_progress);
       this.ticks_progress = this.midiEditor.ticks_progress;
@@ -1298,18 +1310,18 @@ button {
         width: 25px;
         height: 25px;
         background-color: #888;
-        transition: all .1s;
+        transition: all 0.1s;
         cursor: pointer;
 
-        &:deep(svg){
+        &:deep(svg) {
           fill: #444;
-          transition: all .1s;
+          transition: all 0.1s;
         }
 
-        &:hover{
+        &:hover {
           background-color: #777;
 
-          &:deep(svg){
+          &:deep(svg) {
             fill: #b6c3c9;
           }
         }
