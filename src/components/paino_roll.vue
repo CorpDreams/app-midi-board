@@ -673,6 +673,7 @@ export default {
           this.more_beat * this.ppq -
           this.scroll_left_tick;
       }
+      console.warn(this.scroll_view_ticks)
       //TODO: 缩放聚焦于单一tick
       /*
       this.beat_width =
@@ -689,10 +690,10 @@ export default {
         this.scroll_left_tick = this.duration_ticks - this.scroll_view_ticks
         return
       }
-      this.scroll_left_tick = left_tick
+      this.scroll_left_tick = left_tick*/
       this.updateTickWidth()
       this.updatePianoWrapScroll()
-      */
+      
     },
     locateTick(e: any) {
       // 点击时间轴移动播放位置
@@ -755,13 +756,7 @@ export default {
     },
     updatePianoWrapScroll() {
       // 滑条滚动同步
-      this.PianoWrapDOM.scrollLeft =
-        this.PianoRollWrapDOM.offsetWidth -
-        this.PianoWrapDOM.offsetWidth -
-        (this.duration_ticks +
-          this.more_beat * this.ppq -
-          (this.scroll_left_tick + this.scroll_view_ticks)) *
-          this.tick_width;
+      this.PianoWrapDOM.scrollLeft = this.scroll_left_tick * this.tick_width
     },
     getNoteStyle(note: any) {
       // 动态音符块样式：宽度过小不显示标签
@@ -939,7 +934,7 @@ export default {
       }
       this.beat_width =
         this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
-      this.updateTickWidth();
+      // this.updateTickWidth();
       this.reinitScrollBar();
     },
     reinitScrollBar() {
