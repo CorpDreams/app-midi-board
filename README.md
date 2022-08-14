@@ -41,6 +41,8 @@ MIDI Board是一个适用于声网 Netless互动白板的插件，为音乐人�
 
 ## 快速入门
 
+*以下内容包含GIF及图片，为提高加载速度，推荐使用科学上网。*
+
 <img src="./docs/assets/img/intro_00_main.png">
 
 1. 打开一个MIDI文件（可使用项目源目录的`examples`文件夹中的示例MIDI文件）。
