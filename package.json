@@ -14,6 +14,11 @@
   "engines": {
     "npm": "^8.0.0"
   },
+  "author": "CorpDreams",
+  "contributors": [
+    "Eling"
+  ],
+  "license": "MIT",
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
     "sass": "^1.53.0",
