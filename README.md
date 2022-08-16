@@ -12,8 +12,8 @@ MIDI Board是一个适用于声网 Netless互动白板的插件，为音乐人�
 
 2. 将本仓库clone到本地并进入根目录
     ```
-    git clone https://github.com/CorpDreams/midi-board.git
-    cd midi-board
+    git clone https://github.com/CorpDreams/app-midi-board.git
+    cd app-midi-board
     ```
 
 3. 复制根目录下的`.env.example`并重命名为`.env`后，分别填写文件中的`VITE_APPID`, `VITE_ROOM_UUID` 和 `VITE_ROOM_TOKEN`为刚刚获取的临时环境
@@ -24,10 +24,10 @@ MIDI Board是一个适用于声网 Netless互动白板的插件，为音乐人�
     VITE_APPID=ss4WoMf_EeqfCXcv33LmiA/izfIC88inXYJKw
 
     # Whiteboard Room UUID
-    VITE_ROOM_UUID=aea16cd0035d11edb96c9b6e4baebda2
+    VITE_ROOM_UUID=c1063fe01d4311ed924cff6ad50661b2
 
     # Whiteboard Room Token
-    VITE_ROOM_TOKEN=NETLESSROOM_YWs9VWtNUk92M1JIN2I2Z284dCZleHBpcmVBdD0xNjYwMzg1NjQxNjk0Jm5vbmNlPWFlYmVkZmUwLTAzNWQtMTFlZC04OWQxLTNmZjQ1Mzc3YzYxNyZyb2xlPTEmc2lnPTY5OWI4ODQwYWI4MGJkNmRlOGJhNWJkYTdiZjExNzUwMDBiMTg1ZjdkNmVlZTY3Y2I1ZjRlZDZiNmYzZjAyMDAmdXVpZD1hZWExNmNkMDAzNWQxMWVkYjk2YzliNmU0YmFlYmRhMg
+    VITE_ROOM_TOKEN=NETLESSROOM_YWs9VWtNUk92M1JIN2I2Z284dCZleHBpcmVBdD0xNjYzMjMzMjM1OTE2Jm5vbmNlPWMxMmE5MGMwLTFkNDMtMTFlZC1iZWMyLWNiNTUzMjEwMzFlYSZyb2xlPTEmc2lnPWU0MTVmMmZlM2Y0OWUzYTM0YmYyM2IyODIyNDYyOGJkYmQ0MDM2MjNkZDVjODMzNjhhNmY2MTI5MWYyYWY0OTMmdXVpZD1jMTA2M2ZlMDFkNDMxMWVkOTI0Y2ZmNmFkNTA2NjFiMg
     ```
 
 4. 在根目录使用命令行运行以下命令
@@ -38,6 +38,8 @@ MIDI Board是一个适用于声网 Netless互动白板的插件，为音乐人�
     ```
 
     运行完成后浏览器会自动打开本地服务器URL（如果没有请手动[访问](http://localhost:3000)，默认端口为3000），此时可看到白板应用demo已启动，点击右侧工具栏最后一个按钮打开插件列表，点击其中的`MidiBoard`即可使用本插件~
+
+    ***推荐最大化插件窗口以获得最佳体验**
 
 ## 快速入门
 
