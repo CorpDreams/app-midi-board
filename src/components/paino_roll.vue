@@ -935,7 +935,7 @@ export default {
       this.beat_width =
         this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
       // this.updateTickWidth();
-      this.reinitScrollBar();
+      this.initScrollBar();
     },
     reinitScrollBar() {
       // 重新初始化钢琴卷帘滑条
@@ -1108,6 +1108,7 @@ export default {
       }
       if (e.midi_json) {
         this.data.midi_json.value = this.storage.state.midi_json;
+        console.warn(e.midi_json)
         if (e.midi_json.newValue.tracks[0].notes.length > 0) {
           this.can_play = true;
           this.updateMidi(this.midi_json);

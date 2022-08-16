@@ -30,6 +30,7 @@ const MidiBoard: NetlessApp = {
     synth.triggerAttackRelease("A4", "16n", 0.2);
 
     context.emitter.on("destroy", () => {
+      midiEditor.destroy()
       app.unmount();
     });
   },

@@ -244,6 +244,11 @@ class MidiEditor {
     keyUp(note: number) {
         this.synth.send([0x80, note, 0])
     }
+
+    destroy(){
+        this.pause()
+        this.synth = null
+    }
 }
 
 export default MidiEditor;
