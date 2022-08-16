@@ -25,6 +25,10 @@ class MidiEditor {
     time_signature: Array
 
     constructor(midi_json?: MidiJSON) {
+        this.empty(midi_json)
+    }
+
+    empty(midi_json?: MidiJSON) {
         this.ticks_progress = 0
         this.synth = new WebAudioTinySynth({ quality: 1, useReverb: 0 });
         this.synth.setLoop(1)
@@ -64,7 +68,7 @@ class MidiEditor {
         })
         // TODO: 播放进度平滑增加
         // this.initTimer()
-        this.synth.playTick = 0
+        this.locateTick(0)
     }
 
     initTimer() {
@@ -247,7 +251,7 @@ class MidiEditor {
 
     destroy(){
         this.pause()
-        this.synth = null
+        this.empty()
     }
 }
 
