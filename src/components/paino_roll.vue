@@ -788,7 +788,8 @@ export default {
       if (!e.target.files[0]) {
         return;
       }
-      this.pause()
+      // this.pause()
+      this.context.dispatchMagixEvent("midi-pause-force", null);
       let file = e.target.files[0];
       this.midi_name = file.name;
       let midi = await this.readMidi(file);
@@ -802,6 +803,7 @@ export default {
           this.key_height *
           (120 - (this.midi_json.tracks[0].notes[0].midi - 12));
       }
+      this.context.dispatchMagixEvent("midi-locate", 0);
     },
     readMidi(file: any) {
       return new Promise((resolve: (value: Midi) => void, reject) => {
@@ -1142,6 +1144,9 @@ export default {
     // 暂停播放
     this.context.addMagixEventListener("midi-pause", (e: any) => {
       this.midiEditor.pauseWhen(e.payload);
+    });
+    this.context.addMagixEventListener("midi-pause-force", (e: any) => {
+      this.midiEditor.pause();
     });
     // 重新播放
     this.context.addMagixEventListener("midi-reset", () => {
