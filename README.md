@@ -2,7 +2,7 @@
 
 ## 插件简介
 
-MIDI Board is a Netless app for Musician, MIDI maker and Music educator.
+MIDI Board is a Netless app for Musicians, MIDI makers and Music educators.
 
 MIDI Board是一个适用于声网 Netless互动白板的插件，为音乐人、MIDI制作者以及音乐教育工作者提供MIDI文件的编辑与预览。通过本插件，可以实现多端、多用户协同的MIDI编、作曲工作并导出，也可用于线上的音乐相关教学。
 
