@@ -788,6 +788,7 @@ export default {
       if (!e.target.files[0]) {
         return;
       }
+      this.pause()
       let file = e.target.files[0];
       this.midi_name = file.name;
       let midi = await this.readMidi(file);
