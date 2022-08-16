@@ -328,10 +328,11 @@ export default {
 
     Object.defineProperty(midiEditor, "ticks_progress", {
       set: (value) => {
+        midiEditor._ticks_progress = value;
         ticks_progress.value = value;
       },
       get: () => {
-        return ticks_progress;
+        return midiEditor._ticks_progress;
       },
     });
 
@@ -673,7 +674,7 @@ export default {
           this.more_beat * this.ppq -
           this.scroll_left_tick;
       }
-      console.warn(this.scroll_view_ticks)
+      // console.warn(this.scroll_view_ticks)
       //TODO: 缩放聚焦于单一tick
       /*
       this.beat_width =
@@ -935,7 +936,7 @@ export default {
       this.beat_width =
         this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
       // this.updateTickWidth();
-      this.initScrollBar();
+      this.reinitScrollBar();
     },
     reinitScrollBar() {
       // 重新初始化钢琴卷帘滑条
@@ -1102,24 +1103,29 @@ export default {
       this.initScrollBar();
     }).observe(this.ScrollBarDOM);
     this.storage.addStateChangedListener((e: any) => {
+      // console.warn(e)
       if (e.ticks_progress) {
         this.data.ticks_progress.value = this.storage.state.ticks_progress;
         this.midiEditor.locateTick(this.storage.state.ticks_progress);
       }
       if (e.midi_json) {
         this.data.midi_json.value = this.storage.state.midi_json;
-        console.warn(e.midi_json)
-        if (e.midi_json.newValue.tracks[0].notes.length > 0) {
-          this.can_play = true;
-          this.updateMidi(this.midi_json);
-        } else {
-          this.loadMidi(this.midi_json);
-          this.updatePianoWrapScroll();
-          this.updateScrollBar();
-          this.ContentWrapDOM.scrollTop =
-            this.key_height * 60;
-          this.can_play = false;
-          this.pause();
+        if(e.midi_json.newValue){
+          if (e.midi_json.newValue.tracks[0].notes.length > 0) {
+            this.can_play = true;
+            this.updateMidi(this.midi_json);
+            if(!e.midi_json.oldValue){
+              this.initScrollBar();
+            }
+          } else {
+            this.loadMidi(this.midi_json);
+            this.updatePianoWrapScroll();
+            this.updateScrollBar();
+            this.ContentWrapDOM.scrollTop =
+              this.key_height * 60;
+            this.can_play = false;
+            this.pause();
+          }
         }
       }
       this.data.midi_name.value = this.storage.state.midi_name;
