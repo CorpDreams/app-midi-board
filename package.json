@@ -1,13 +1,11 @@
 {
-  "name": "app-counter",
-  "version": "0.1.0",
-  "description": "Template for a Netless Community App",
-  "private": true,
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.es.js",
+  "name": "app-midi-board",
+  "version": "0.5.0",
+  "description": "MIDI Board - A Netless app for Musicians, MIDI makers and Music educators",
+  "private": false,
+  "main": "src/index.ts",
   "files": [
-    "src",
-    "dist"
+    "src"
   ],
   "scripts": {
     "start": "vite",
@@ -16,6 +14,11 @@
   "engines": {
     "npm": "^8.0.0"
   },
+  "author": "CorpDreams",
+  "contributors": [
+    "Eling"
+  ],
+  "license": "MIT",
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
     "sass": "^1.53.0",

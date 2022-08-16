@@ -1,22 +1,128 @@
 <template>
-  <div class="paino-roll-wrap" :style="cssVars">
+  <div
+    class="piano-roll-wrap"
+    :style="cssVars"
+    :class="{ pen: tool_id == 1, eraser: tool_id == 2 }"
+  >
     <div class="fixed-wrap">
       <div class="tool-bar">
-        <input type="file" @change="fileChange" />
-        <button @click="play">play</button>
-        <button @click="reset">reset</button>
-        <button @click="beat_width++">test</button>
-        <button @click="cut_num = 2">1/2</button>
-        <button @click="cut_num = 3">1/3</button>
-        <button @click="cut_num = 4">1/4</button>
-        <button @click="cut_num = 6">1/6</button>
-        <button @click="newMidi">新建MIDI文件</button>
-        <button @click="track_index = 0">Track0</button>
-        <button @click="track_index = 1">Track1</button>
-        <span>{{}}</span>
+        <button
+          class="btn-open btn-action"
+          title="打开MIDI文件"
+          @click="InputFileDOM.click()"
+        >
+          <input
+            class="input-file"
+            type="file"
+            @change="fileChange"
+            ref="input-file"
+            accept=".mid"
+          />
+          <Icon name="open" height="20" width="20" />
+        </button>
+        <button class="btn-new btn-action" @click="newMidi" title="新建文件">
+          <Icon name="new" height="20" width="20" />
+        </button>
+        <button class="btn-save btn-action" @click="saveMidi" title="保存文件">
+          <Icon name="save" height="20" width="20" />
+        </button>
+        <div class="midi-name">{{ midi_name }}</div>
+        <div class="combo-track combo-wrap">
+          <div class="track-focus track-wrap">
+            <span class="track-index">{{ track_index }}</span>
+            <span class="track-name">{{ getTracks()[track_index].name }}</span>
+          </div>
+          <div class="combo-option-wrap">
+            <template v-for="(track, index) in getTracks()" :key="track.name">
+              <div
+                class="combo-option track-wrap"
+                v-if="track_index !== index"
+                @click="switchTrackIndex($event, index)"
+              >
+                <span class="track-index">{{ index }}</span>
+                <span class="track-name">{{ track.name }}</span>
+                <span class="btn-remove" @click="removeTrack(index)">
+                  <Icon name="close" height="12" width="12" />
+                </span>
+              </div>
+            </template>
+          </div>
+        </div>
+        <button
+          class="btn-add-track btn-action"
+          @click="addTrack"
+          title="新建轨道"
+          :class="{ unavailable: hasMidiJson }"
+        >
+          <Icon name="add-track" height="20" width="20" />
+        </button>
+        <button
+          class="btn-play btn-action"
+          :class="{ unavailable: !can_play }"
+          @click="play()"
+          title="播放/暂停（空格）"
+        >
+          <Icon :name="playStatus" height="20" width="20" />
+        </button>
+        <button
+          class="btn-reset btn-action"
+          @click="reset"
+          title="从头播放"
+          :class="{ unavailable: !can_play }"
+        >
+          <Icon name="reset" height="20" width="20" />
+        </button>
+        <div class="btn-tool-wrap">
+          <div class="combo-cut-wrap">
+            <span class="combo-label">对齐:</span>
+            <div class="combo-cut combo-wrap">
+              <div class="cut-focus cut-wrap">
+                <span class="cut-text">{{ `1/${cut_num}` }}</span>
+              </div>
+              <div class="combo-option-wrap">
+                <template v-for="cut in cut_arr" :key="cut">
+                  <div
+                    class="combo-option cut-wrap"
+                    v-if="cut !== cut_num"
+                    @click="changeCutNum(cut)"
+                  >
+                    <span class="cut-text">{{ `1/${cut}` }}</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          <button
+            class="btn-cursor btn-tool"
+            :class="{ active: tool_id == 0 }"
+            @click="switchTool(0)"
+            title="鼠标"
+          >
+            <Icon name="cursor" height="20" width="20" />
+          </button>
+          <button
+            class="btn-pen btn-tool"
+            :class="{ active: tool_id == 1 }"
+            @click="switchTool(1)"
+            title="音符画笔"
+          >
+            <Icon name="pen" height="20" width="20" />
+          </button>
+          <button
+            class="btn-eraser btn-tool"
+            :class="{ active: tool_id == 2 }"
+            @click="switchTool(2)"
+            title="橡皮擦"
+          >
+            <Icon name="eraser" height="20" width="20" />
+          </button>
+        </div>
+        <!--<button @click="reset">reset</button>-->
       </div>
-      <div class="paino-scroll-bar-wrap">
-        <div class="btn-left"></div>
+      <div class="piano-scroll-bar-wrap">
+        <div class="btn-left" @click="toRollRange(scroll_left_tick - 500)">
+          <Icon name="left" height="18" width="18" />
+        </div>
         <div class="scroll-bar" ref="scroll-bar">
           <div
             class="thumb"
@@ -25,14 +131,17 @@
               left: `${scroll_left_tick * tick_width_bar}px`,
               width: `${scroll_view_ticks * tick_width_bar}px`,
               maxWidth: `${
-                (duration_ticks - scroll_left_tick) * tick_width_bar
+                (duration_ticks + more_beat * ppq - scroll_left_tick) *
+                tick_width_bar
               }px`,
             }"
           >
             <div class="drag-area" @mousedown="moveRollRange"></div>
           </div>
         </div>
-        <div class="btn-right"></div>
+        <div class="btn-right" @click="toRollRange(scroll_left_tick + 500)">
+          <Icon name="right" height="18" width="18" />
+        </div>
       </div>
       <table
         class="time-line-wrap"
@@ -41,7 +150,7 @@
         :style="{
           width: `${beat_width * getBeatArr.length}px`,
           height: `${key_height}px`,
-          left: `${paino_width - paino_wraps_scroll_left + 0.5}px`,
+          left: `${piano_width - piano_wraps_scroll_left + 0.5}px`,
         }"
       >
         <tr
@@ -67,16 +176,16 @@
     </div>
     <div class="content-wrap" ref="content-wrap">
       <div class="content-scroll-wrap">
-        <div class="side-paino-key">
+        <div class="side-piano-key">
           <div
             class="octave-wrap"
-            v-for="(octave, octave_index) in paino_key.octave"
+            v-for="(octave, octave_index) in piano_key.octave"
             :key="octave"
           >
             <div
               class="key"
-              :class="keyClass(paino_key, note_index)"
-              v-for="(code, note_index) in paino_key.code"
+              :class="keyClass(piano_key, note_index)"
+              v-for="(code, note_index) in piano_key.code"
               :key="code"
               :id="`key-${131 - (code + octave_index * 12)}`"
               @mousedown="keyDown(131 - (code + octave_index * 12))"
@@ -84,40 +193,41 @@
               @mouseup="keyUp(131 - (code + octave_index * 12))"
               @mouseout="keyUp(131 - (code + octave_index * 12))"
             >
-              {{ keyLabel(octave, paino_key, note_index) }}
+              {{ keyLabel(octave, piano_key, note_index) }}
             </div>
           </div>
         </div>
-        <div class="paino-wrap" ref="paino-wrap">
-          <div class="paino-roll">
+        <div class="piano-wrap" ref="piano-wrap" @mousedown="addNote">
+          <div class="piano-roll">
             <!--钢琴卷帘-->
             <table
               class="roll-wrap"
               :style="{ width: `${beat_width * getBeatArr.length}px` }"
-              ref="paino-roll-wrap"
+              ref="piano-roll-wrap"
             >
               <!--八度循环渲染-->
               <template
-                v-for="(octave, octave_index) in paino_key.octave"
+                v-for="(octave, octave_index) in piano_key.octave"
                 :key="octave"
               >
                 <!--八度内音高（行）循环渲染-->
                 <tr
                   class="pitch"
-                  :class="keyClass(paino_key, note_index)"
+                  :class="keyClass(piano_key, note_index)"
                   :id="`row-${octave_index}-${note_index}`"
-                  v-for="(code, note_index) in paino_key.code"
+                  v-for="(code, note_index) in piano_key.code"
                   :key="code"
                 >
                   <td class="pitch-line"></td>
                 </tr>
               </template>
             </table>
-            <template v-for="track_num in getTrackArr" :key="track_num">
+            <template v-for="(track, track_num) in tracks" :key="track_num">
               <div
                 class="notes-wrap"
                 v-if="tracks[track_num]"
                 :class="{ active: track_num == track_index }"
+                :style="{ width: `${beat_width * getBeatArr.length}px` }"
               >
                 <div
                   class="note"
@@ -135,14 +245,20 @@
                     focus:
                       fucus_notes.indexOf(`note-${track_num}-${index}`) >= 0,
                   }"
+                  @mousedown="removeNote"
+                  @mouseenter="removeNote"
                 >
-                  <div class="move-area"
-                  :id="`notemove-${track_num}-${index}`"
-                  @mousedown="moveNote"
-                  >{{ note.name }}</div>
-                  <div class="drag-area"
-                  :id="`notedrag-${track_num}-${index}`"
-                  @mousedown="changeNoteDuration"
+                  <div
+                    class="move-area"
+                    :id="`notemove-${track_num}-${index}`"
+                    @mousedown="moveNote"
+                  >
+                    {{ note.name }}
+                  </div>
+                  <div
+                    class="drag-area"
+                    :id="`notedrag-${track_num}-${index}`"
+                    @mousedown="changeNoteDuration"
                   ></div>
                 </div>
               </div>
@@ -164,31 +280,41 @@
 import type { AppContext } from "@netless/window-manager";
 import { Midi, MidiJSON } from "@tonejs/midi";
 import { inject, ref, toRef, watch, computed } from "vue";
+import Icon from "./Icon.vue";
 
 export default {
-  name: "paino-roll",
+  name: "piano-roll",
+  components: {
+    Icon,
+  },
   setup() {
     const context = inject<AppContext>("context");
     if (!context)
       throw new Error("must call provide('context') before mount App");
 
     interface midi_board {
-      midi_json: object | null;
+      midi_json: any;
+      midi_name: string;
       ticks_progress: number;
       content_scroll_top: number;
+      track_index: number;
     }
 
     const midi_board: midi_board = {
       midi_json: null,
+      midi_name: "",
       ticks_progress: 0,
       content_scroll_top: 0,
+      track_index: 0,
     };
     const storage = context.createStorage("midi-board", midi_board);
 
     const data: any = {
       midi_json: ref(storage.state.midi_json),
+      midi_name: ref(storage.state.midi_name),
       ticks_progress: ref(storage.state.ticks_progress),
       content_scroll_top: ref(storage.state.content_scroll_top),
+      track_index: ref(storage.state.track_index),
     };
 
     const midiEditor = inject<any>("midiEditor");
@@ -198,37 +324,48 @@ export default {
     const ppq = ref(midiEditor.ppq);
     const time_signature = ref(midiEditor.time_signature);
     const ticks_progress = ref(midiEditor.ticks_progress);
+    const is_play = ref(midiEditor.is_play);
 
     Object.defineProperty(midiEditor, "ticks_progress", {
       set: (value) => {
+        midiEditor._ticks_progress = value;
         ticks_progress.value = value;
       },
       get: () => {
-        return ticks_progress;
+        return midiEditor._ticks_progress;
       },
     });
 
-    /*const ticks_progress = computed<any>({
-      get: () => data.ticks_progress.value,
-      set: (ticks_progress) => storage.setState({ ticks_progress }),
-    });
-    Object.defineProperty(midiEditor, "ticks_progress", {
+    Object.defineProperty(midiEditor, "is_play", {
       set: (value) => {
-        ticks_progress.value = value;
+        is_play.value = value;
+        midiEditor._is_play = value;
       },
       get: () => {
-        return ticks_progress;
+        return midiEditor._is_play;
       },
-    });*/
+    });
 
     const midi_json = computed<any>({
       get: () => data.midi_json.value,
       set: (midi_json) => storage.setState({ midi_json }),
     });
 
+    const midi_name = computed<any>({
+      get: () => data.midi_name.value,
+      set: (midi_name) => storage.setState({ midi_name }),
+    });
+
     const content_scroll_top = computed<any>({
       get: () => data.content_scroll_top.value,
       set: (content_scroll_top) => storage.setState({ content_scroll_top }),
+    });
+
+    const tracks: any[] = [];
+
+    const track_index = computed<number>({
+      get: () => data.track_index.value,
+      set: (track_index) => storage.setState({ track_index }),
     });
 
     return {
@@ -241,37 +378,44 @@ export default {
       time_signature,
       ticks_progress,
       midi_json,
+      midi_name,
       content_scroll_top,
+      track_index,
+      tracks,
+      is_play,
     };
   },
   data() {
-    const paino_key = {
+    const piano_key = {
       octave: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
       notes: ["B", "A#", "A", "G#", "G", "F#", "F", "E", "D#", "D", "C#", "C"],
       key_type: [1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 1],
       code: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     };
 
-    const track_index = 0;
-    const tracks: any[] = [];
+    const tool_id = 0;
+    const can_play = false;
 
     const cut_num = 4;
+    const cut_arr = [2, 3, 4, 6];
     const align_num = 4;
     const beat_arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const more_beat = 8;
 
     const key_height = 20;
     const beat_width = 60;
-    const paino_width = 80;
+    const piano_width = 80;
 
+    const InputFileDOM: any = null;
     const ScrollBarDOM: any = null;
     const ThumbDOM: any = null;
     const TimeLineWrapDOM: any = null;
     const ContentWrapDOM: any = null;
-    const PainoWrapDOM: any = null;
-    const PainoRollDOM: any = null;
-    const PainoRollWrapDOM: any = null;
+    const PianoWrapDOM: any = null;
+    const PianoRollDOM: any = null;
+    const PianoRollWrapDOM: any = null;
 
-    const paino_wraps_scroll_left: any = 0;
+    const piano_wraps_scroll_left: any = 0;
 
     const scroll_left_tick: number = 0;
     const scroll_view_ticks: number = 0;
@@ -282,23 +426,26 @@ export default {
     const fucus_notes: any[] = [];
 
     return {
-      paino_key,
+      piano_key,
+      tool_id,
+      can_play,
       key_height,
       beat_width,
-      paino_width,
+      piano_width,
       cut_num,
+      cut_arr,
       align_num,
       beat_arr,
-      track_index,
-      tracks,
+      more_beat,
+      InputFileDOM,
       ScrollBarDOM,
       ThumbDOM,
       TimeLineWrapDOM,
       ContentWrapDOM,
-      PainoRollDOM,
-      PainoWrapDOM,
-      PainoRollWrapDOM,
-      paino_wraps_scroll_left,
+      PianoRollDOM,
+      PianoWrapDOM,
+      PianoRollWrapDOM,
+      piano_wraps_scroll_left,
       scroll_left_tick,
       scroll_view_ticks,
       tick_width,
@@ -307,11 +454,22 @@ export default {
     };
   },
   methods: {
-    test() {
-      console.log(
-        this.PainoRollWrapDOM.offsetWidth,
-        this.PainoWrapDOM.scrollLeft
-      );
+    switchTool(tool_id: number) {
+      if (this.tool_id !== tool_id) {
+        return (this.tool_id = tool_id);
+      }
+      return (this.tool_id = 0);
+    },
+    switchTrackIndex(e: any, track_index: number) {
+      if (!e.target.classList.contains("btn-remove")) {
+        if (track_index < this.tracks.length) {
+          return (this.track_index = track_index);
+        }
+        return (this.track_index = 0);
+      }
+    },
+    changeCutNum(cut_num: number) {
+      this.cut_num = cut_num;
     },
     focusNote(e: any) {
       if (this.fucus_notes.indexOf(e.target.id) < 0) {
@@ -322,112 +480,205 @@ export default {
     },
     moveNote(e: any) {
       // 移动音符位置（开始时间及音高），因性能问题只能按照拍子分割对齐
-      let is_play = false
-      if(this.midiEditor.is_play){
-        this.play()
-        is_play = true
+      if (this.tool_id !== 2) {
+        let is_play = false;
+        if (this.midiEditor.is_play) {
+          this.pause();
+          is_play = true;
+        }
+        let note_index = e.target.id.split("-")[2];
+        let track = this.midiEditor.midi_json.tracks[this.track_index];
+        let note = track.notes[note_index];
+        let midi = note.midi;
+        let code = midi - 12;
+        this.keyDown(code);
+        let time = note.time;
+        let ticks = note.ticks;
+        let start_x = e.clientX;
+        let y_layer = e.layerY;
+        let start_y = e.clientY;
+        document.onmousemove = (e: any) => {
+          let x_move = e.clientX - start_x;
+          let y_move = e.clientY - start_y + y_layer;
+          let delta = Math.floor(y_move / this.key_height);
+          let midi_new = midi - delta;
+          if (midi_new - 12 !== code) {
+            this.keyUp(code);
+            code = midi_new - 12;
+            this.keyDown(code);
+          }
+          let time_new = 0;
+          let ticks_new = 0;
+          if (this.cut_num !== 0) {
+            let move_cut = Math.ceil(x_move / (this.beat_width / this.cut_num));
+            let move_tick = move_cut * (this.ppq / this.cut_num); // 不再使用独立align_num，改为cut_num
+            ticks_new = ticks + move_tick;
+            let move_time = this.midiEditor.ticksToSeconds(move_tick);
+            time_new = time + move_time;
+          }
+          note.midi = midi_new;
+          note.time = time_new;
+          note.ticks = ticks_new;
+          note.name = this.midiEditor.midiToName(midi_new);
+          if (track.endOfTrackTicks < note.ticks + note.duration) {
+            track.endOfTrackTicks = note.ticks + note.duration;
+          }
+        };
+        document.onmouseup = () => {
+          this.keyUp(code);
+          this.midi_json = JSON.parse(
+            JSON.stringify(this.midiEditor.midi_json)
+          );
+          if (is_play) {
+            this.play();
+          }
+          document.onmousemove = document.onmouseup = null;
+        };
       }
-      let note_index = e.target.id.split("-")[2];
-      let note = this.midiEditor.midi_json.tracks[this.track_index].notes[note_index];
-      let midi = note.midi
-      let code = midi - 12
-      this.keyDown(code)
-      let time = note.time
-      let ticks = note.ticks
-      let start_x = e.clientX;
-      let y_layer = e.layerY;
-      let start_y = e.clientY;
-      document.onmousemove = (e: any) => {
-        let x_move = e.clientX - start_x;
-        let y_move = e.clientY - start_y + y_layer;
-        let delta = Math.floor(y_move / this.key_height);
-        let midi_new = midi - delta
-        if(midi_new - 12 !== code){
-          this.keyUp(code)
-          code = midi_new - 12
-          console.log(code)
-          this.keyDown(code)
-        }
-        let time_new = 0
-        let ticks_new = 0
-        if(this.cut_num !== 0){
-          let move_cut = Math.ceil(x_move / (this.beat_width / this.cut_num))
-          let move_tick = move_cut * (this.ppq / this.cut_num) // 不再使用独立align_num，改为cut_num
-          ticks_new = ticks + move_tick
-          let move_time = this.midiEditor.ticksToSeconds(move_tick)
-          time_new = time + move_time
-        }
-        note.midi = midi_new
-        note.time = time_new
-        note.ticks = ticks_new
-        note.name = this.midiEditor.midi2name(midi_new)
-      };
-      document.onmouseup = () => {
-        this.keyUp(code)
-        this.midi_json = JSON.parse(JSON.stringify(this.midiEditor.midi_json))
-        if(is_play){
-          this.play()
-        }
-        document.onmousemove = document.onmouseup = null;
-      };
     },
-    changeNoteDuration(e: any){
-      // 移动音符位置（开始时间及音高），因性能问题只能按照拍子分割对齐
-      let is_play = false
-      if(this.midiEditor.is_play){
-        this.play()
-        is_play = true
+    changeNoteDuration(e: any) {
+      // 调整音符时值
+      if (this.tool_id !== 2) {
+        let note_index = e.target.id.split("-")[2];
+        let track = this.midiEditor.midi_json.tracks[this.track_index];
+        let note = track.notes[note_index];
+        let duration = note.duration;
+        let duration_ticks = note.durationTicks;
+        let start_x = e.clientX;
+        document.onmousemove = (e: any) => {
+          let x_move = e.clientX - start_x;
+          let duration_new = duration;
+          let duration_ticks_new = duration_ticks;
+          if (this.cut_num !== 0) {
+            let move_cut = Math.ceil(x_move / (this.beat_width / this.cut_num));
+            let move_tick = move_cut * (this.ppq / this.cut_num); // 不再使用独立align_num，改为cut_num
+            duration_ticks_new = duration_ticks + move_tick;
+            let move_time = this.midiEditor.ticksToSeconds(move_tick);
+            duration_new = duration + move_time;
+          }
+          note.duration = duration_new;
+          note.durationTicks = duration_ticks_new;
+          if (track.endOfTrackTicks < note.ticks + note.duration) {
+            track.endOfTrackTicks = note.ticks + note.duration;
+          }
+        };
+        document.onmouseup = () => {
+          this.midi_json = JSON.parse(
+            JSON.stringify(this.midiEditor.midi_json)
+          );
+          document.onmousemove = document.onmouseup = null;
+        };
       }
-      let note_index = e.target.id.split("-")[2];
-      let note = this.midiEditor.midi_json.tracks[this.track_index].notes[note_index];
-      let duration = note.duration
-      let duration_ticks = note.durationTicks
-      let start_x = e.clientX;
-      document.onmousemove = (e: any) => {
-        let x_move = e.clientX - start_x;
-        let duration_new = duration
-        let duration_ticks_new = duration_ticks
-        if(this.cut_num !== 0){
-          let move_cut = Math.ceil(x_move / (this.beat_width / this.cut_num))
-          let move_tick = move_cut * (this.ppq / this.cut_num) // 不再使用独立align_num，改为cut_num
-          duration_ticks_new = duration_ticks + move_tick
-          let move_time = this.midiEditor.ticksToSeconds(move_tick)
-          duration_new = duration + move_time
+    },
+    removeNote(e: any) {
+      // 使用橡皮擦删除音符
+      if (this.tool_id == 2 && (window as any).event.buttons == 1) {
+        let note_index = e.target.id.split("-")[2];
+        let track = this.midiEditor.midi_json.tracks[this.track_index];
+        track.notes.splice(note_index, 1);
+        document.onmouseup = () => {
+          this.midi_json = JSON.parse(
+            JSON.stringify(this.midiEditor.midi_json)
+          );
+          document.onmouseup = null;
+        };
+      }
+    },
+    addNote(e: any) {
+      if (!this.midi_json) {
+        alert("请先打开或新建MIDI文件");
+        return;
+      }
+      if (this.tool_id == 1 && e.target.classList.contains("notes-wrap")) {
+        if (this.midiEditor.is_play) {
+          this.pause();
         }
-        note.duration = duration_new
-        note.durationTicks = duration_ticks_new
-      };
-      document.onmouseup = () => {
-        this.midi_json = JSON.parse(JSON.stringify(this.midiEditor.midi_json))
-        if(is_play){
-          this.play()
+        let code_add = Math.ceil(131 - e.layerY / this.key_height);
+        let midi_add = code_add + 12;
+        let name = this.midiEditor.midiToName(midi_add);
+        let ticks_add = Math.floor(
+          Math.floor(e.layerX / (this.beat_width / this.cut_num)) *
+            (this.ppq / this.cut_num)
+        );
+        if (ticks_add < this.ticks_progress) {
+          this.context.dispatchMagixEvent("midi-locate", ticks_add - 100);
         }
-        document.onmousemove = document.onmouseup = null;
-      };
+        let time_add = this.midiEditor.ticksToSeconds(ticks_add);
+        let duration_ticks_add = Math.floor(this.ppq / this.cut_num);
+        let duration_add = this.midiEditor.ticksToSeconds(duration_ticks_add);
+        let note_add = {
+          time: time_add,
+          midi: midi_add,
+          name: name,
+          velocity: 0.75,
+          duration: duration_add,
+          ticks: ticks_add,
+          durationTicks: duration_ticks_add,
+        };
+        let note_index =
+          this.midiEditor.midi_json.tracks[this.track_index].notes.length;
+        this.midiEditor.midi_json.tracks[this.track_index].notes.push(note_add);
+        this.midi_json = JSON.parse(JSON.stringify(this.midiEditor.midi_json));
+
+        this.keyDown(code_add);
+        let track = this.midiEditor.midi_json.tracks[this.track_index];
+        let note = track.notes[note_index];
+        let duration = note.duration;
+        let duration_ticks = note.durationTicks;
+        let start_x = e.clientX;
+        document.onmousemove = (e: any) => {
+          let x_move = e.clientX - start_x;
+          let duration_new = duration;
+          let duration_ticks_new = duration_ticks;
+          if (this.cut_num !== 0) {
+            let move_cut = Math.ceil(x_move / (this.beat_width / this.cut_num));
+            let move_tick = move_cut * (this.ppq / this.cut_num); // 不再使用独立align_num，改为cut_num
+            duration_ticks_new = duration_ticks + move_tick;
+            let move_time = this.midiEditor.ticksToSeconds(move_tick);
+            duration_new = duration + move_time;
+          }
+          note.duration = duration_new;
+          note.durationTicks = duration_ticks_new;
+          if (track.endOfTrackTicks < note.ticks + note.duration) {
+            track.endOfTrackTicks = note.ticks + note.duration;
+          }
+        };
+        document.onmouseup = () => {
+          this.keyUp(code_add);
+          this.midi_json = JSON.parse(
+            JSON.stringify(this.midiEditor.midi_json)
+          );
+          document.onmousemove = document.onmouseup = null;
+        };
+      }
     },
     mouseWheelZoom(e: any) {
       // 在时间轴上使用滚轮缩放
       let wheel_tick =
         (e.layerX / this.TimeLineWrapDOM.offsetWidth) * this.duration_ticks;
       let wheel_x =
-        (e.clientX - this.PainoWrapDOM.offsetLeft) /
-        this.PainoWrapDOM.offsetWidth;
+        (e.clientX - this.PianoWrapDOM.offsetLeft) /
+        this.PianoWrapDOM.offsetWidth;
 
       let delta_ticks = -((e.deltaY / Math.abs(e.deltaY)) * this.ppq * 2);
       let view_ticks_before = this.scroll_view_ticks;
 
       if (
         this.scroll_left_tick + this.scroll_view_ticks + delta_ticks <=
-        this.duration_ticks
+        this.duration_ticks + this.more_beat * this.ppq
       ) {
         this.scroll_view_ticks += delta_ticks;
       } else {
-        this.scroll_view_ticks = this.duration_ticks - this.scroll_left_tick;
+        this.scroll_view_ticks =
+          this.duration_ticks +
+          this.more_beat * this.ppq -
+          this.scroll_left_tick;
       }
+      // console.warn(this.scroll_view_ticks)
       //TODO: 缩放聚焦于单一tick
       /*
       this.beat_width =
-        this.PainoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
+        this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
 
       let left_tick = this.scroll_left_tick - (this.scroll_view_ticks - view_ticks_before) * wheel_x
       console.log(this.beat_width)
@@ -440,17 +691,18 @@ export default {
         this.scroll_left_tick = this.duration_ticks - this.scroll_view_ticks
         return
       }
-      this.scroll_left_tick = left_tick
+      this.scroll_left_tick = left_tick*/
       this.updateTickWidth()
-      this.updatePainoWrapScroll()
-      */
+      this.updatePianoWrapScroll()
+      
     },
     locateTick(e: any) {
       // 点击时间轴移动播放位置
       let target_tick =
-        (e.layerX / this.TimeLineWrapDOM.offsetWidth) * this.duration_ticks;
+        (e.layerX / this.TimeLineWrapDOM.offsetWidth) *
+        (this.duration_ticks + this.more_beat * this.ppq);
       this.context.dispatchMagixEvent("midi-locate", target_tick);
-      this.midiEditor.locateTick(target_tick);
+      // this.midiEditor.locateTick(target_tick);
     },
     moveRollRange(e: any) {
       // 滑块拖拽，按比例移动钢琴卷帘
@@ -464,16 +716,21 @@ export default {
           this.scroll_left_tick = 0;
         } else if (
           end_left_tick >
-          this.duration_ticks - this.scroll_view_ticks
+          this.duration_ticks +
+            this.more_beat * this.ppq -
+            this.scroll_view_ticks
         ) {
           // 越过右端，设为最大值
-          this.scroll_left_tick = this.duration_ticks - this.scroll_view_ticks;
+          this.scroll_left_tick =
+            this.duration_ticks +
+            this.more_beat * this.ppq -
+            this.scroll_view_ticks;
         } else {
           // 正常移动
           this.scroll_left_tick =
             start_left_tick + x_move / this.tick_width_bar;
         }
-        this.updatePainoWrapScroll();
+        this.updatePianoWrapScroll();
       };
       document.onmouseup = function () {
         document.onmousemove = document.onmousemove = null;
@@ -483,23 +740,24 @@ export default {
       if (left_tick < 0) {
         // 越过左端，归零
         this.scroll_left_tick = 0;
-      } else if (left_tick > this.duration_ticks - this.scroll_view_ticks) {
+      } else if (
+        left_tick >
+        this.duration_ticks + this.more_beat * this.ppq - this.scroll_view_ticks
+      ) {
         // 越过右端，设为最大值
-        this.scroll_left_tick = this.duration_ticks - this.scroll_view_ticks;
+        this.scroll_left_tick =
+          this.duration_ticks +
+          this.more_beat * this.ppq -
+          this.scroll_view_ticks;
       } else {
         // 正常移动
         this.scroll_left_tick = left_tick;
       }
-      this.updatePainoWrapScroll();
+      this.updatePianoWrapScroll();
     },
-    updatePainoWrapScroll() {
+    updatePianoWrapScroll() {
       // 滑条滚动同步
-      this.PainoWrapDOM.scrollLeft =
-        this.PainoRollWrapDOM.offsetWidth -
-        this.PainoWrapDOM.offsetWidth -
-        (this.duration_ticks -
-          (this.scroll_left_tick + this.scroll_view_ticks)) *
-          this.tick_width;
+      this.PianoWrapDOM.scrollLeft = this.scroll_left_tick * this.tick_width
     },
     getNoteStyle(note: any) {
       // 动态音符块样式：宽度过小不显示标签
@@ -508,12 +766,13 @@ export default {
       let note_duration_ticks = note.durationTicks;
       let left = this.tick_width * ticks;
 
-      let key = name.substring(0, name.length - 1);
-      let key_index = this.paino_key.notes.indexOf(key);
-      let octave = parseInt(name.charAt(name.length - 1));
+      let octave_str = name.match(/\d+/g)[0];
+      let octave = parseInt(octave_str);
+      let key = name.substring(0, name.length - octave_str.length);
+      let key_index = this.piano_key.notes.indexOf(key);
       let top =
         this.key_height * 12 * (10 - octave) + key_index * this.key_height;
-
+      // console.warn(octave, key_index)
       let width = note_duration_ticks * this.tick_width;
       let padding = 2;
       if (this.beat_width < 20) {
@@ -526,11 +785,22 @@ export default {
       return [top, left, width, padding, font_size];
     },
     fileChange: async function (e: any) {
+      if (!e.target.files[0]) {
+        return;
+      }
       let file = e.target.files[0];
+      this.midi_name = file.name;
       let midi = await this.readMidi(file);
       this.midi_json = midi.toJSON();
-      this.context.dispatchMagixEvent("load-midi", null);
+      this.track_index = 0;
       this.loadMidi(this.midi_json);
+      this.ticks_progress = 0;
+      this.PianoWrapDOM.scrollLeft = 0;
+      if (this.midi_json.tracks[0].notes[0]) {
+        this.ContentWrapDOM.scrollTop =
+          this.key_height *
+          (120 - (this.midi_json.tracks[0].notes[0].midi - 12));
+      }
     },
     readMidi(file: any) {
       return new Promise((resolve: (value: Midi) => void, reject) => {
@@ -544,17 +814,20 @@ export default {
     },
     loadMidi(midi: MidiJSON) {
       this.midiEditor.loadMidiJSON(midi);
-      console.log(this.midiEditor);
       this.ppq = this.midiEditor.ppq;
       this.duration_ticks = this.midiEditor.duration_ticks;
+      this.tracks = [];
       this.tracks = ref(this.midiEditor.midi_json.tracks);
+      this.$forceUpdate();
       this.initScrollBar();
     },
     updateMidi(midi: MidiJSON) {
       this.midiEditor.updateMidiJSON(midi);
       this.ppq = this.midiEditor.ppq;
       this.duration_ticks = this.midiEditor.duration_ticks;
+      this.tracks = [];
       this.tracks = ref(this.midiEditor.midi_json.tracks);
+      this.$forceUpdate();
       this.updateScrollBar();
     },
     keyDown(code: number) {
@@ -569,27 +842,48 @@ export default {
     },
     play() {
       if (!this.midiEditor.is_play) {
-        this.context.dispatchMagixEvent("midi-play", this.midiEditor.synth.playTick);
-        this.storage.setState({ ticks_progress: this.midiEditor.synth.playTick })
-        return this.midiEditor.play();
+        if (this.can_play) {
+          this.context.dispatchMagixEvent(
+            "midi-play",
+            this.midiEditor.synth.playTick
+          );
+          this.storage.setState({
+            ticks_progress: this.midiEditor.synth.playTick,
+          });
+          return this.midiEditor.play();
+        }
+        alert("请先放置至少一个音符");
       }
-      this.context.dispatchMagixEvent("midi-pause", this.midiEditor.synth.playTick);
-      this.storage.setState({ ticks_progress: this.midiEditor.synth.playTick })
+      this.context.dispatchMagixEvent(
+        "midi-pause",
+        this.midiEditor.synth.playTick
+      );
+      this.storage.setState({
+        ticks_progress: this.midiEditor.synth.playTick,
+      });
+      this.midiEditor.pause();
+    },
+    pause() {
+      this.context.dispatchMagixEvent(
+        "midi-pause",
+        this.midiEditor.synth.playTick
+      );
+      this.storage.setState({ ticks_progress: this.midiEditor.synth.playTick });
       this.midiEditor.pause();
     },
     reset() {
       this.midiEditor.reset();
       this.context.dispatchMagixEvent("midi-reset", null);
     },
-    keyClass(paino_key: any, note_index: number) {
+    keyClass(piano_key: any, note_index: number) {
       let class_arr = [];
-      if (paino_key.key_type[note_index] == 2) {
+      if (piano_key.key_type[note_index] == 2) {
         class_arr.push("white-high");
       }
-      if (paino_key.key_type[note_index] >= 1) {
+      if (piano_key.key_type[note_index] >= 1) {
         class_arr.push("white");
       }
-      if (paino_key.key_type[note_index] == 0) {
+      if (piano_key.key_type[note_index] == 0) {
         class_arr.push("black");
       }
       class_arr.push(`key-${note_index}`);
@@ -604,23 +898,25 @@ export default {
       }
       return class_arr.join(" ");
     },
-    keyLabel(octave: number, paino_key: any, note_index: number) {
+    keyLabel(octave: number, piano_key: any, note_index: number) {
       // 仅显示各八度C的标签
-      if (paino_key.code[note_index] !== 11) {
+      if (piano_key.code[note_index] !== 11) {
         return "";
       }
-      return `${paino_key.notes[note_index]}${octave}`;
+      return `${piano_key.notes[note_index]}${octave}`;
     },
     initScrollBar() {
       // 初始化钢琴卷帘滑条，beat_width标准化并显示为初始缩放比例
-      this.tick_width_bar = this.ScrollBarDOM.clientWidth / this.duration_ticks;
+      this.tick_width_bar =
+        this.ScrollBarDOM.clientWidth /
+        (this.duration_ticks + this.more_beat * this.ppq);
       this.scroll_left_tick = 0;
       this.beat_width = 60;
-      let piano_roll_width = this.ScrollBarDOM.clientWidth - this.paino_width;
+      let piano_roll_width = this.ScrollBarDOM.clientWidth - this.piano_width;
       let tick_num = (piano_roll_width / this.beat_width) * this.ppq;
       this.scroll_view_ticks = tick_num;
       this.updateTickWidth();
-      this.PainoWrapDOM.scrollLeft = 0;
+      this.PianoWrapDOM.scrollLeft = 0;
     },
     updateScrollBar() {
       // 处理宽度拖动事件：以滑条宽度更新beat_width并固定卷帘中起始tick
@@ -629,16 +925,26 @@ export default {
       let left = parseInt(this.ThumbDOM.style.left.split("px")[0]);
       if (width > this.ScrollBarDOM.clientWidth - left) {
         this.ThumbDOM.style.width = `${this.ScrollBarDOM.clientWidth - left}px`;
-        this.scroll_view_ticks = this.duration_ticks - this.scroll_left_tick;
+        this.scroll_view_ticks =
+          this.duration_ticks +
+          this.more_beat * this.ppq -
+          this.scroll_left_tick;
         // return;
       } else {
         this.scroll_view_ticks = width / this.tick_width_bar;
       }
       this.beat_width =
-        this.PainoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
+        this.PianoWrapDOM.offsetWidth / (this.scroll_view_ticks / this.ppq);
+      // this.updateTickWidth();
+      this.reinitScrollBar();
+    },
+    reinitScrollBar() {
+      // 重新初始化钢琴卷帘滑条
+      this.tick_width_bar =
+        this.ScrollBarDOM.clientWidth /
+        (this.duration_ticks + this.more_beat * this.ppq);
       this.updateTickWidth();
-      this.PainoWrapDOM.scrollLeft =
-        this.PainoWrapDOM.scrollLeft * (this.beat_width / beat_width_before);
+      this.updatePianoWrapScroll();
     },
     updateTickWidth() {
       //更新钢琴卷帘中Tick宽度
@@ -646,6 +952,19 @@ export default {
     },
     newMidi() {
       // 新建MIDI文件
+      let confirmed = false;
+      if (this.midi_json) {
+        if (this.midi_json.tracks[0].notes.length > 0) {
+          confirmed = confirm("即将新建MIDI文件，请确认当前工程已保存！");
+        }
+      } else {
+        confirmed = true;
+      }
+      if (!confirmed) {
+        return;
+      }
+      this.pause();
+      this.InputFileDOM.value = null;
       let midi = new Midi();
       let track = midi.addTrack();
       midi.header.name = "Untitled";
@@ -657,7 +976,43 @@ export default {
       });
       midi.header.update();
       track.name = "Track 0";
-      console.log(midi.toJSON());
+      this.loadMidi(midi.toJSON());
+      this.midi_json = this.midiEditor.midi_json;
+      this.midi_name = "未命名.mid";
+    },
+    addTrack() {
+      this.pause();
+      let track = this.midiEditor.midi.addTrack();
+      let track_index = this.midiEditor.midi.tracks.length - 1;
+      track.name = `Track ${track_index}`;
+      this.midi_json = this.midiEditor.midi.toJSON();
+      this.$forceUpdate();
+      this.track_index = track_index;
+    },
+    removeTrack(track_index: number) {
+      let confirmed = confirm(`是否确认删除序号为 ${track_index} 的轨道？`);
+      if (!confirmed) {
+        return;
+      }
+      this.pause();
+      this.midiEditor.midi_json.tracks.splice(track_index, 1);
+      this.midi_json = JSON.parse(JSON.stringify(this.midiEditor.midi_json));
+      this.$forceUpdate();
+      if (this.track_index > this.midi_json.tracks.length - 1) {
+        this.track_index = 0;
+      }
+    },
+    saveMidi() {
+      let filename = `${this.midi_name}`;
+      let blob = new Blob([this.midiEditor.midi.toArray()]);
+      let file = new window.File([blob], filename, { type: "blob" });
+      let eleDownload = document.createElement("a");
+      eleDownload.download = filename;
+      eleDownload.style.display = "none";
+      eleDownload.href = URL.createObjectURL(blob);
+      document.body.appendChild(eleDownload);
+      eleDownload.click();
+      document.body.removeChild(eleDownload);
     },
     getTimeLineBeatStyle(beat_index: number) {
       // 时间轴动态样式
@@ -677,13 +1032,28 @@ export default {
       }
       return style;
     },
+    getTracks() {
+      if (this.tracks.length > 0) {
+        if (this.track_index > this.tracks.length - 1) {
+          this.track_index = 0;
+        }
+        return this.tracks;
+      }
+      for (let i = 0; i < this.track_index + 1; i++) {
+        this.tracks.push({ name: "" });
+      }
+      return this.tracks;
+    },
+    getDurationTicks() {
+      return Math.ceil(this.duration_ticks / this.ppq) * this.ppq;
+    },
   },
   computed: {
     cssVars() {
       return {
         "--key_height": `${this.key_height}px`,
         "--beat_width": `${this.beat_width}px`,
-        "--paino_width": `${this.paino_width}px`,
+        "--piano_width": `${this.piano_width}px`,
         "--cut_num": this.cut_num,
         "--beat_per_bar": this.midiEditor.time_signature[0],
       };
@@ -691,12 +1061,10 @@ export default {
     getBeatArr() {
       // 根据总拍子数生成从0开始的数组用于循环渲染
       return Array.from(
-        new Array(Math.ceil(this.duration_ticks / this.ppq)).keys()
+        new Array(
+          Math.ceil(this.duration_ticks / this.ppq) + this.more_beat
+        ).keys()
       );
-    },
-    getTrackArr() {
-      // 根据总拍子数生成从0开始的数组用于循环渲染
-      return Array.from(new Array(this.tracks.length).keys());
     },
     getProgressLeft() {
       // 根据播放进度计算进度条位置
@@ -706,42 +1074,68 @@ export default {
         this.ticks_progress
       );
     },
+    playStatus() {
+      if (this.is_play) {
+        return "pause";
+      }
+      return "play";
+    },
+    hasMidiJson() {
+      if(this.midi_json){
+        return false
+      }
+      return true
+    }
   },
   mounted() {
+    this.InputFileDOM = this.$refs["input-file"];
     this.ScrollBarDOM = this.$refs["scroll-bar"];
     this.ThumbDOM = this.$refs["thumb"];
     this.TimeLineWrapDOM = this.$refs["time-line-wrap"];
-    this.PainoWrapDOM = this.$refs["paino-wrap"];
+    this.PianoWrapDOM = this.$refs["piano-wrap"];
     this.ContentWrapDOM = this.$refs["content-wrap"];
-    this.PainoRollWrapDOM = this.$refs["paino-roll-wrap"];
-    this.paino_wraps_scroll_left = toRef(this.PainoWrapDOM, "scrollLeft");
+    this.PianoRollWrapDOM = this.$refs["piano-roll-wrap"];
+    this.piano_wraps_scroll_left = toRef(this.PianoWrapDOM, "scrollLeft");
     new ResizeObserver((e) => {
       this.updateScrollBar();
     }).observe(this.ThumbDOM);
+    new ResizeObserver((e) => {
+      this.initScrollBar();
+    }).observe(this.ScrollBarDOM);
     this.storage.addStateChangedListener((e: any) => {
-      //this.data.midi_name.value = this.storage.state.midi_name;
-      this.data.ticks_progress.value = this.storage.state.ticks_progress;
-      if(e.midi_json){
-        this.data.midi_json.value = this.storage.state.midi_json;
-        this.updateMidi(this.midi_json);
+      // console.warn(e)
+      if (e.ticks_progress) {
+        this.data.ticks_progress.value = this.storage.state.ticks_progress;
+        this.midiEditor.locateTick(this.storage.state.ticks_progress);
       }
+      if (e.midi_json) {
+        this.data.midi_json.value = this.storage.state.midi_json;
+        if(e.midi_json.newValue){
+          if (e.midi_json.newValue.tracks[0].notes.length > 0) {
+            this.can_play = true;
+            this.updateMidi(this.midi_json);
+            if(!e.midi_json.oldValue){
+              this.initScrollBar();
+            }
+          } else {
+            this.loadMidi(this.midi_json);
+            this.updatePianoWrapScroll();
+            this.updateScrollBar();
+            this.ContentWrapDOM.scrollTop =
+              this.key_height * 60;
+            this.can_play = false;
+            this.pause();
+          }
+        }
+      }
+      this.data.midi_name.value = this.storage.state.midi_name;
       this.data.content_scroll_top.value =
         this.storage.state.content_scroll_top;
+      this.data.track_index.value = this.storage.state.track_index;
     });
-    // 加载midi
-    /*
-    this.context.addMagixEventListener("load-midi", (e: any) => {
-      let room: any = this.context.getRoom()
-      if(e.authorId !== room.observerId){
-        console.log("load-midi", this.midi_json.tracks[0].notes[2])
-        console.log(this.midi_json.tracks[0].notes[2], this.storage.state.midi_json.tracks[0].notes[2])
-        this.loadMidi(this.midi_json);
-      }
-    });
-    */
     // 开始播放
     this.context.addMagixEventListener("midi-play", (e: any) => {
-      this.midiEditor.locateTick(e.payload)
+      this.midiEditor.locateTick(e.payload);
       this.midiEditor.play();
     });
     // 暂停播放
@@ -752,16 +1146,34 @@ export default {
     this.context.addMagixEventListener("midi-reset", () => {
       this.midiEditor.reset();
     });
-    // 重新播放
+    // 定位
     this.context.addMagixEventListener("midi-locate", (e: any) => {
-      this.midiEditor.locateTick(e.payload)
+      let target_tick = e.payload;
+      if (target_tick < 0) {
+        target_tick = 0;
+      }
+      if (target_tick > this.duration_ticks) {
+        target_tick = this.duration_ticks;
+      }
+      this.midiEditor.locateTick(target_tick);
+      this.storage.setState({ ticks_progress: target_tick });
     });
+    // 未新建文件时提示
+    if (this.data.midi_name.value == "") {
+      this.storage.setState({ midi_name: "请打开或新建MIDI文件" });
+    }
     // 加入房间自动加载
     if (this.storage.state.midi_json) {
+      if (this.storage.state.midi_json.tracks[0].notes.length > 0) {
+        this.can_play = true;
+      }
       this.loadMidi(this.midi_json);
+      this.updatePianoWrapScroll();
+      this.updateScrollBar();
       this.ContentWrapDOM.scrollTop = this.content_scroll_top;
-      this.midiEditor.locateTick(this.storage.state.ticks_progress)
-      this.ticks_progress = this.midiEditor.ticks_progress
+      this.midiEditor.locateTick(this.storage.state.ticks_progress);
+      this.ticks_progress = this.midiEditor.ticks_progress;
+      this.toRollRange(this.ticks_progress);
     }
     // 滚动同步
     this.context.addMagixEventListener("content-scroll", () => {
@@ -773,6 +1185,28 @@ export default {
       });
       this.context.dispatchMagixEvent("content-scroll", null);
     });
+    // 快捷键绑定
+    document.onkeydown = (e: any) => {
+      if (e.target.nodeName == "TEXTAREA" || e.target.nodeName == "INPUT") {
+        return;
+      }
+      // 切换笔
+      if (e.keyCode == 80) {
+        this.switchTool(1);
+        return false;
+      }
+      // 切换橡皮
+      if (e.keyCode == 69) {
+        this.switchTool(2);
+        return false;
+      }
+      // 空格播放/暂停
+      if (e.keyCode == 32) {
+        this.play();
+        return false;
+      }
+    };
+    // this.context.hotkey
   },
   watch: {
     ticks_progress: function (newProgress) {
@@ -782,6 +1216,9 @@ export default {
       if (newProgress < this.scroll_left_tick) {
         this.toRollRange(newProgress);
       }
+    },
+    duration_ticks: function () {
+      this.reinitScrollBar();
     },
   },
 };
@@ -834,7 +1271,13 @@ $pitch-line: linear-gradient(
   #3b3b3b calc($key-height - $line-width / 2)
 );
 
-.paino-roll-wrap {
+button {
+  border: none;
+  background-color: transparent;
+  padding: 0;
+}
+
+.piano-roll-wrap {
   display: flex;
   position: absolute;
   top: 0;
@@ -853,7 +1296,7 @@ $pitch-line: linear-gradient(
     width: 100%;
     background-color: #2e2f3a;
 
-    .paino-scroll-bar-wrap {
+    .piano-scroll-bar-wrap {
       display: inline-flex;
       width: 100%;
       height: 25px;
@@ -863,9 +1306,27 @@ $pitch-line: linear-gradient(
       .btn-right {
         flex-shrink: 0;
         flex-grow: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         width: 25px;
         height: 25px;
         background-color: #888;
+        transition: all 0.1s;
+        cursor: pointer;
+
+        &:deep(svg) {
+          fill: #444;
+          transition: all 0.1s;
+        }
+
+        &:hover {
+          background-color: #777;
+
+          &:deep(svg) {
+            fill: #b6c3c9;
+          }
+        }
       }
 
       .scroll-bar {
@@ -892,6 +1353,197 @@ $pitch-line: linear-gradient(
               cursor: grabbing;
             }
           }
+        }
+      }
+    }
+
+    .tool-bar {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+      height: 25px;
+      padding: 0 5px;
+      color: #b6c3c9;
+      font-size: 12px;
+
+      .midi-name {
+        flex-shrink: 1;
+        margin: 0 5px;
+        width: 200px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .combo-wrap {
+        position: relative;
+        line-height: 23px;
+
+        .combo-option-wrap {
+          position: absolute;
+          top: 23px;
+          z-index: 3;
+          background-color: #2e2f3a;
+          height: 0;
+          width: 100%;
+          overflow: hidden;
+
+          .combo-option {
+            cursor: pointer;
+            border-radius: 3px;
+            box-sizing: border-box;
+            border: solid 1px transparent;
+
+            &:hover {
+              background-color: rgba(204, 204, 204, 0.2);
+              border: solid 1px rgba(242, 242, 242, 0.5);
+            }
+          }
+        }
+
+        &:hover {
+          & .combo-option-wrap {
+            height: fit-content;
+          }
+        }
+      }
+
+      .combo-track {
+        width: 120px;
+
+        .track-wrap {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          .track-index {
+            flex-shrink: 0;
+            flex-grow: 0;
+            padding: 0 3px;
+            color: #888;
+          }
+          .track-name {
+            flex-shrink: 1;
+            flex-grow: 1;
+            margin-left: 2px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
+          .btn-remove {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 18px;
+            width: 18px;
+            margin-right: 3px;
+            opacity: 0;
+            transition: all 0.1s;
+
+            &:deep(svg) {
+              fill: #b6c3c9;
+            }
+
+            &:hover {
+              background-color: rgba(204, 204, 204, 0.2);
+            }
+          }
+
+          &.combo-option:hover {
+            .btn-remove {
+              opacity: 1;
+            }
+          }
+        }
+      }
+
+      & .btn-tool-wrap {
+        flex-grow: 1;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+
+        .combo-cut-wrap {
+          flex-shrink: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          .combo-cut {
+            width: 30px;
+
+            .cut-wrap {
+              text-align: center;
+            }
+          }
+        }
+      }
+
+      button {
+        flex-shrink: 0;
+        display: flex;
+        position: relative;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: 23px;
+        height: 23px;
+        line-height: 23px;
+        border-radius: 3px;
+        color: #b6c3c9;
+        cursor: pointer;
+        margin: 0 1px;
+
+        &:deep(path) {
+          fill: #b6c3c9;
+        }
+
+        &:hover {
+          background-color: rgba(204, 204, 204, 0.2);
+          border: solid 1px rgba(242, 242, 242, 0.5);
+
+          :deep(path) {
+            fill: #e1ac56;
+          }
+        }
+
+        &.active {
+          background-color: rgba(204, 204, 204, 0.2);
+
+          :deep(path) {
+            fill: #df9f3f;
+          }
+        }
+
+        &.unavailable {
+          cursor: not-allowed;
+
+          :deep(path) {
+            fill: rgba(182, 195, 201, 0.3);
+          }
+
+          &:hover {
+            background-color: transparent;
+            border: none;
+
+            :deep(path) {
+              fill: rgba(182, 195, 201, 0.3);
+            }
+          }
+        }
+
+        & .input-file {
+          position: absolute;
+          top: -100px;
+          left: -100px;
+          height: 100%;
+          width: 100%;
+          opacity: 0;
+          border-radius: 3px;
+          cursor: pointer;
         }
       }
     }
@@ -939,20 +1591,42 @@ $pitch-line: linear-gradient(
       display: flex;
       height: fit-content;
 
-      .side-paino-key {
+      .side-piano-key {
         flex-shrink: 0;
         width: 80px;
       }
 
-      .paino-wrap {
+      .piano-wrap {
         flex-grow: 1;
         overflow-x: hidden;
       }
     }
   }
+
+  &.pen {
+    .content-wrap {
+      cursor: url("../assets/cursor/pen.svg") 8 8, auto;
+    }
+  }
+
+  &.eraser {
+    .content-wrap {
+      cursor: url("../assets/cursor/eraser.svg") 8 8, auto;
+      .notes-wrap.active .note {
+        cursor: url("../assets/cursor/eraser.svg") 8 8, auto;
+        .move-area {
+          cursor: url("../assets/cursor/eraser.svg") 8 8, auto;
+        }
+
+        .drag-area {
+          cursor: url("../assets/cursor/eraser.svg") 8 8, auto;
+        }
+      }
+    }
+  }
 }
 
-.paino-roll {
+.piano-roll {
   position: relative;
 
   .notes-wrap {
@@ -983,13 +1657,13 @@ $pitch-line: linear-gradient(
         background-color: #b6c3c9;
       }
 
-      .move-area{
+      .move-area {
         width: 95%;
         height: 100%;
         line-height: 10px;
       }
 
-      .drag-area{
+      .drag-area {
         flex-shrink: 0;
         display: inline-block;
         height: 100%;
