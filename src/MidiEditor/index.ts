@@ -231,8 +231,10 @@ class MidiEditor {
 
     locateTick(tick) {
         if (!this.midi) return console.error('Please loadMidiJSON first!')
-        this.synth.locateMIDI(tick)
-        this.ticks_progress = tick
+        if (!this.midi.durationTicks == 0){
+            this.synth.locateMIDI(tick)
+            this.ticks_progress = tick
+        }
     }
 
     reset() {
