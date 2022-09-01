@@ -17,6 +17,32 @@ export function get_uid() {
   return uid;
 }
 
+export function get_query() {
+  const query = new URLSearchParams(location.search);
+  let uid = query.get("uid");
+  let VITE_APPID = query.get("VITE_APPID");
+  let VITE_ROOM_UUID = query.get("VITE_ROOM_UUID");
+  let VITE_ROOM_TOKEN = query.get("VITE_ROOM_TOKEN");
+  if (!uid) {
+    uid = Math.random().toString(36).slice(2);
+    update_query({ uid });
+  }
+  if(!VITE_APPID || !VITE_APPID || !VITE_ROOM_UUID){
+    let env = import.meta.env
+    VITE_APPID = env.VITE_APPID
+    VITE_ROOM_UUID = env.VITE_ROOM_UUID
+    VITE_ROOM_TOKEN = env.VITE_ROOM_TOKEN
+    update_query({ VITE_APPID, VITE_ROOM_UUID, VITE_ROOM_TOKEN });
+  }
+  console.debug("uid =", uid);
+  return {
+    uid,
+    VITE_APPID,
+    VITE_ROOM_UUID,
+    VITE_ROOM_TOKEN
+  };
+}
+
 function update_query(set: Record<string, string | undefined>) {
   const query = new URLSearchParams(location.search);
   for (const key of Object.keys(set)) {

@@ -1,5 +1,5 @@
 import { createFastboard, mount, Theme } from "@netless/fastboard";
-import { get_uid } from "./query";
+import { get_uid, get_query } from "./query";
 import { registering } from "./register";
 import "./style.css";
 
@@ -8,15 +8,19 @@ main().catch(console.error);
 async function main() {
   await registering;
 
+  console.warn(this)
+
+  let query = get_query()
+
   const fastboard = await createFastboard({
     sdkConfig: {
-      appIdentifier: import.meta.env.VITE_APPID,
+      appIdentifier: query.VITE_APPID,
       region: "cn-hz",
     },
     joinRoom: {
-      uid: get_uid(),
-      uuid: import.meta.env.VITE_ROOM_UUID,
-      roomToken: import.meta.env.VITE_ROOM_TOKEN,
+      uid: query.uid,
+      uuid: query.VITE_ROOM_UUID,
+      roomToken: query.VITE_ROOM_TOKEN,
     },
   });
 
